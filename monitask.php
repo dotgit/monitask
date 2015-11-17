@@ -225,7 +225,7 @@ Class Monitask
         foreach (self::$commands as $key=>$cmd)
         {
             // get current time
-            $time = time();
+            $time = microtime(true);
 
             // run commands
             if (($output = shell_exec($cmd)) === null)
