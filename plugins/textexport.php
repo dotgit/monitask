@@ -1,5 +1,7 @@
 <?php
 
+namespace Plugins;
+
 Class TextExport extends Export
 {
     public function __construct($params)

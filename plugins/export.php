@@ -1,5 +1,7 @@
 <?php
 
+namespace Plugins;
+
 Class Export
 {
 	public $error;

@@ -1,5 +1,7 @@
 <?php
 
+namespace Plugins;
+
 Class SQLiteStore extends Store
 {
     // datastore section of ini file

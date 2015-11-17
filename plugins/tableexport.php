@@ -1,5 +1,7 @@
 <?php
 
+namespace Plugins;
+
 Class TableExport extends Export
 {
     // output section of ini file

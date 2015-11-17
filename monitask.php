@@ -1,5 +1,10 @@
 <?php
 
+use Plugins\CsvStore;
+use Plugins\SQLiteStore;
+use Plugins\TableExport;
+use Plugins\TextExport;
+
 Class Monitask
 {
     // global vars
@@ -34,6 +39,8 @@ Class Monitask
 	public static function init($config_file)
 	{
         putenv('LANG=C');
+        define('DIR', __DIR__);
+
         self::$platform = strtolower(trim(`uname`));
 
         if (self::$ini = self::parseIni($config_file))

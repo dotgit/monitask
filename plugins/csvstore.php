@@ -1,5 +1,7 @@
 <?php
 
+namespace Plugins;
+
 Class CsvStore extends Store
 {
     // datastore section of ini file

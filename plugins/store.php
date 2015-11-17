@@ -1,5 +1,7 @@
 <?php
 
+namespace Plugins;
+
 Class Store
 {
 	public $error;
