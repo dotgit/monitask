@@ -29,9 +29,10 @@ Class Monitask
 
 	public static $platform;        // "freebsd"
     public static $ini;             // {ini file contents}
-	public static $includes = [];   // {"file-full-name":true}
-	public static $commands = [];   // {"cmd-name":"command"}
-	public static $metrics  = [];   // {"metric-name":["time", "value"]}
+	public static $periods = [];    // {"period-name":"strtotime-pattern", ...}
+	public static $includes = [];   // {"file-full-name":true, ...}
+	public static $commands = [];   // {"cmd-name":"command", ...}
+	public static $metrics  = [];   // {"metric-name":["time", "value"], ...}
 	public static $items    = [];   // {"block-name":[], ...}
 	public static $store;           // {object of Store}
 	public static $export;          // {object of Export}
@@ -106,6 +107,10 @@ Class Monitask
                 }
 			}
 
+            self::$periods = self::arrayExtract(self::$ini, self::VAR_PERIOD);
+            if (! is_array(self::$periods))
+                self::$periods = [];
+
             // process common directives
             self::processIni(self::$ini);
 
@@ -148,17 +153,10 @@ Class Monitask
 
         // get block name and start periods
         $block = self::arrayExtract($ini, self::VAR_BLOCK);
-        $periods = self::arrayExtract($ini, self::VAR_PERIOD);
 
         // import items
         if (! empty($ini))
-        {
-            foreach ($ini as $item)
-            {
-                self::$items[$block] = $item;
-                self::$items[$block][self::VAR_PERIOD] = $periods;
-            }
-        }
+            self::$items[$block] = $ini;
 
         // process includes
         if ($includes)
@@ -274,11 +272,29 @@ Class Monitask
             error_log('['.self::SECTION_EXPORT.'] section is not configured');
             return false;
         }
-        elseif (self::$export->export(self::$items))
-            return true;
+        elseif (empty(self::$items))
+        {
+            error_log('export items are not configured');
+            return false;
+        }
+        elseif (empty(self::$periods))
+        {
+            error_log(self::VAR_PERIOD.' directive is not set');
+            return false;
+        }
+        elseif ($data = self::$store->load(self::$items, self::$periods))
+        {
+            if (self::$export->export($data))
+                return true;
+            else
+            {
+                error_log(self::$export->error ? self::$export->error : 'error exporting data');
+                return false;
+            }
+        }
         else
         {
-            error_log(self::$export->error ? self::$export->error : 'error exporting data');
+            error_log(self::$store->error ? self::$store->error : 'error loading data from datastore');
             return false;
         }
     }

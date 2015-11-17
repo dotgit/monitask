@@ -11,9 +11,9 @@ Class CsvStore extends Store
     const MODE_WRITE    = 'a';
 
     // database description
-    const FLD_UPDATE    = 'update_time';
-    const FLD_METRIC    = 'metric';
-    const FLD_VALUE     = 'value';
+    const FLD_TIME      = 0;
+    const FLD_METRIC    = 1;
+    const FLD_VALUE     = 2;
 
 	public $filename;
 	public $handle;
@@ -122,5 +122,54 @@ Class CsvStore extends Store
         }
         else
             return true;
+	}
+
+    public function load($items, $periods)
+	{
+        if (empty($this->handle) and ! $this->open(self::MODE_READ))
+            return false;
+
+        $start_time = [];
+        $errors = [];
+        foreach ($periods as $name=>$pattern)
+        {
+            if ($tm = strtotime($pattern, $_SERVER['REQUEST_TIME']))
+                $start_time[$name] = $tm;
+            else
+                $errors[] = sprintf(
+                    "%s: '%s' is not a valid strtotime pattern in period['%s']",
+                    __METHOD__,
+                    $pattern,
+                    $name
+                );
+        }
+
+        if ($errors)
+        {
+            $this->error = implode(PHP_EOL, $errors);
+            return false;
+        }
+        if (empty($start_time))
+        {
+            $this->error = __METHOD__.': periods are not defined';
+            return false;
+        }
+        $min_time = min($start_time);
+        if (empty($min_time))
+        {
+            $this->error = __METHOD__.': periods are not defined';
+            return false;
+        }
+
+        // skip older records
+        do
+        {
+            $line = fgetcsv($this->handle);
+        }
+        while ($line !== false
+            and (empty($line[self::FLD_TIME]) or $line[self::FLD_TIME] < $min_time)
+        );
+
+        return true;
 	}
 }

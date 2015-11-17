@@ -34,11 +34,12 @@ Class Store
 		return true;
 	}
 
-    /** loads metrics from the datastore and calculates the corresponding bins
-     * @param array $bins
+    /** loads metrics from the datastore and calculates the values for periods
+     * @param array $items
+     * @param array $periods
      * @return boolean
      */
-	public function loadMetricsIntoBins(&$bins)
+	public function load($items, $periods)
 	{
 		return true;
 	}

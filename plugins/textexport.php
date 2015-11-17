@@ -12,7 +12,7 @@ Class TextExport extends Export
     {
         foreach ($items as $block=>$bk_items)
         {
-            if (!empty($bk_items) and is_array($bk_items))
+            if (! empty($bk_items) and is_array($bk_items))
             {
                 echo $block, PHP_EOL;
                 foreach ($bk_items as $item)
