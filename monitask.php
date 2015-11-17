@@ -233,7 +233,7 @@ Class Monitask
             exec($cmd, $output, $errorlevel);
             if ($errorlevel)
                 $errors[] = "error executing $key: $cmd";
-            elseif (preg_match_all('/^(\S+)\s+(.+)$/m', $output, $m))
+            elseif (preg_match_all('/^(\S+)\s+(.+)$/m', impode(PHP_EOL, $output), $m))
             {
                 // collect metrics
                 foreach ($m[1] as $k=>$v)
