@@ -228,7 +228,10 @@ Class Monitask
             $time = microtime(true);
 
             // run commands
-            if (($output = shell_exec($cmd)) === null)
+            $errorlevel = 0;
+            $output = [];
+            exec($cmd, $output, $errorlevel);
+            if ($errorlevel)
                 $errors[] = "error executing $key: $cmd";
             elseif (preg_match_all('/^(\S+)\s+(.+)$/m', $output, $m))
             {
