@@ -284,6 +284,7 @@ Class Monitask
         }
         elseif ($data = self::$store->load(self::$items, self::$periods))
         {
+print_r($data);
             if (self::$export->export($data))
                 return true;
             else

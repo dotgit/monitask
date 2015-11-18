@@ -14,7 +14,7 @@ Class TextExport extends Export
         {
             if (! empty($bk_items) and is_array($bk_items))
             {
-                echo $block, PHP_EOL;
+//                echo $block, PHP_EOL;
                 foreach ($bk_items as $item)
                 {
                 }

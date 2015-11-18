@@ -5,7 +5,7 @@ namespace Plugins;
 Class Store
 {
     // how many bins to use per graph
-    const LOAD_BINS_CNT = 200;
+    const LOAD_BINS_CNT = 10;
 
     // bin parameters
     const BIN_VALUE_MIN = 0;
