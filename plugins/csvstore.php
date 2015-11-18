@@ -129,42 +129,10 @@ Class CsvStore extends Store
         if (empty($this->handle) and ! $this->open(self::MODE_READ))
             return false;
 
-        $now = $_SERVER['REQUEST_TIME'];
-        $start_times = [];          // {"-2 days":"start-time",...}
-        $period_times = [];         // {"-2 days":["bin1time","bin2time",...],...}
-        $metric_period_bins = [];   // {"metric":{"-2 days":{"bin1time":{},...},...},...}
-        $errors = [];
-        foreach ($periods as $name=>$pattern)
-        {
-            if ($start_tm = strtotime($pattern, $now))
-            {
-                $start_times[$name] = $start_tm;
-                $delta = (int)(($now - $start_tm) / self::LOAD_BINS_CNT);
-                $period_times[$name] = [];
-                for ($i = $start_tm + $delta; $i < $now; $i += $delta)
-                    $period_times[$name][] = $i;
-                $period_times[$name][] = $now;
-            }
-            else
-                $errors[] = sprintf(
-                    "%s: '%s' is not a valid strtotime pattern in period['%s']",
-                    __METHOD__,
-                    $pattern,
-                    $name
-                );
-        }
+        if (! $this->preload($periods))
+            return false;
 
-        if ($errors)
-        {
-            $this->error = implode(PHP_EOL, $errors);
-            return false;
-        }
-        if (empty($start_times))
-        {
-            $this->error = __METHOD__.': periods are not defined';
-            return false;
-        }
-        $min_time = min($start_times);
+        $min_time = min($this->start_time);
         if (empty($min_time))
         {
             $this->error = __METHOD__.': periods are not defined';
@@ -187,6 +155,7 @@ Class CsvStore extends Store
             return false;
         }
 
+        $metric_period_bins = [];   // {"metric":{"-2 days":{"bin1time":{},...},...},...}
         // read fresh records and store in corresponding bins
         for (;$line !== false; $line = fgetcsv($this->handle))
         {
@@ -194,11 +163,11 @@ Class CsvStore extends Store
                 continue;
 
             $line_time = $line[self::FLD_TIME];
-            foreach ($start_times as $name=>$start_tm)
+            foreach ($this->start_time as $name=>$start_tm)
             {
                 if ($line_time > $start_tm)
                 {
-                    foreach ($period_times[$name] as $tm)
+                    foreach ($this->period_times[$name] as $tm)
                         if ($line_time < $tm)
                             break;
                     if (empty($metric_period_bins[$line[self::FLD_METRIC]][$name][$tm]))
