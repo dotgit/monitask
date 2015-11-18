@@ -4,7 +4,16 @@ namespace Plugins;
 
 Class Store
 {
-	public $error;
+    // how many bins to use per graph
+    const LOAD_BINS_CNT = 200;
+
+    // bin parameters
+    const BIN_VALUE_MIN = 0;
+    const BIN_VALUE_MAX = 1;
+    const BIN_VALUE_SUM = 2;
+    const BIN_VALUE_CNT = 3;
+
+    public $error;
 
     /** creates and initializes datastore
      * @return boolean
