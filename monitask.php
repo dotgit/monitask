@@ -281,9 +281,9 @@ Class Monitask
             error_log(self::VAR_PERIOD.' directive is not set');
             return false;
         }
-        elseif ($metrics = self::$store->load(self::$periods, self::$items))
+        elseif (self::$store->load())
         {
-            if (self::$export->export($metrics, self::$items))
+            if (self::$export->export(self::$items, self::$periods, self::$store))
                 return true;
             else
             {

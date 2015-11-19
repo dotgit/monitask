@@ -249,17 +249,10 @@ Class CsvStore extends Store
         // read fresh records and store in corresponding bins
         while ($line = fgetcsv($this->handle))
         {
-            if (count($line) < 9)
+            if (count($line) < 11)
                 continue;
 
-            if (count($line) == 9)
-            {
-                list($metric, $period, $bin_tm, $last_time, $last, $min, $max, $sum, $cnt) = $line;
-                $first_time = $last_time;
-                $first = $last;
-            }
-            else
-                list($metric, $period, $bin_tm, $first_time, $first, $last_time, $last, $min, $max, $sum, $cnt) = $line;
+            list($metric, $period, $bin_tm, $first_time, $first, $last_time, $last, $min, $max, $sum, $cnt) = $line;
 
             $this->metric_period_bins[$metric][$period][$bin_tm] = [
                 self::BIN_FIRST_TIME=>$first_time,
