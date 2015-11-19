@@ -5,26 +5,65 @@ namespace Plugins;
 Class CsvStore extends Store
 {
     // datastore section of ini file
-    const VAR_FILENAME = 'filename';
+    const VAR_FILENAME  = 'filename';
+    const VAR_START_TIME= 'start_time';
+    const VAR_BINS  = 'bins';
 
+    // file open modes
     const MODE_READ     = 'r';
-    const MODE_WRITE    = 'a';
-
-    // database description
-    const FLD_TIME      = 0;
-    const FLD_METRIC    = 1;
-    const FLD_VALUE     = 2;
+    const MODE_WRITE    = 'w';
 
 	public $filename;
 	public $handle;
+    public $start_time;
+    public $periods_seconds = [];
+	public $bins_count;
 
-	public function __construct($params)
+	public function __construct($params, $periods)
 	{
-        if (empty($params[self::VAR_FILENAME]))
+        // set bins count
+        $this->bins_count = ! empty($params[self::VAR_BINS]) ? (int)$params[self::VAR_BINS] : 100;
+        if ($this->bins_count < 1)
+        {
+            $this->error = __METHOD__.': '.self::VAR_BINS.' parameter must be positive integer';
+            return;
+        }
+
+        // set start time
+        $this->start_time = strtotime(isset($params[self::VAR_START_TIME]) ? $params[self::VAR_START_TIME] : '2015-01-01');
+        if (empty($this->start_time))
+        {
+            $this->error = __METHOD__.': '.self::VAR_START_TIME.' parameter not set or is not formatted as YYYY-MM-DD';
+            return;
+        }
+
+        // set datastore filename
+        if (! isset($params[self::VAR_FILENAME]))
+        {
             $this->error = __METHOD__.': '.self::VAR_FILENAME.' parameter not set';
-        else
-    		$this->filename = $params[self::VAR_FILENAME];
-	}
+            return;
+        }
+        $this->filename = $params[self::VAR_FILENAME];
+
+        // set periods
+        $errors = [];
+        $this->periods = $periods;
+        if (! is_array($this->periods))
+        {
+            $this->error = __METHOD__.': period must be an array';
+            return;
+        }
+        foreach ($periods as $name=>$format)
+        {
+            if ($period_tm = strtotime($format))
+                $this->periods_seconds[$name] = (int)((time() - $period_tm)/$this->bins_count);
+            else
+                $errors[] = __METHOD__.": wrong strtotime format '$format' in period '$name'";
+        }
+
+        if ($errors)
+            $this->error = implode(PHP_EOL, $errors);
+    }
 
 	public function create()
 	{
@@ -60,137 +99,162 @@ Class CsvStore extends Store
 
 	public function close()
 	{
-        if (! $this->handle)
+        if (! $this->handle or fclose($this->handle))
         {
-            $this->error = __METHOD__.": $this->filename datafile is not open";
-            return false;
+            unset($this->handle);
+            return true;
         }
-        elseif (! $this->handle = fclose($this->filename))
+        else
         {
             $this->error = __METHOD__.": cannot close $this->filename datafile";
+            return false;
+        }
+	}
+
+	public function periodNextBin($period, $time, $bin_times=[])
+	{
+        $tm = $bin_times ? max($bin_times) : $this->start_time;
+        while ($tm < $time)
+            $tm += $this->periods_seconds[$period];
+        return $tm;
+	}
+
+	public function insertMetrics($time, $metrics=[])
+	{
+        if ($this->load() === false)
+            return false;
+
+        // insert metrics into existing structure or create a new one
+        $period_first = [];
+        foreach ($metrics as $metric=>$value)
+        {
+            if (isset($this->metric_period_bins[$metric]))
+            {
+                foreach ($this->periods as $period=>$format)
+                {
+                    if (isset($this->metric_period_bins[$metric][$period]))
+                    {
+                        $bin_tm = $this->periodNextBin($period, $time, array_keys($this->metric_period_bins[$metric][$period]));
+                        if (isset($this->metric_period_bins[$metric][$period][$bin_tm]))
+                        {
+                            $bin = &$this->metric_period_bins[$metric][$period][$bin_tm];
+                            $bin[self::BIN_LAST_TIME] = $time;
+                            $bin[self::BIN_LAST_VALUE] = $value;
+                            if ($value < $bin[self::BIN_MIN_VALUE])
+                                $bin[self::BIN_MIN_VALUE] = $value;
+                            if ($bin[self::BIN_MAX_VALUE] < $value)
+                                $bin[self::BIN_MAX_VALUE] = $value;
+                            $bin[self::BIN_SUM] += $value;
+                            ++$bin[self::BIN_COUNT];
+                        }
+                        else
+                        {
+                            $this->metric_period_bins[$metric][$period][$bin_tm] = [
+                                self::BIN_LAST_TIME=>$time,
+                                self::BIN_LAST_VALUE=>$value,
+                                self::BIN_MIN_VALUE=>$value,
+                                self::BIN_MAX_VALUE=>$value,
+                                self::BIN_SUM=>$value,
+                                self::BIN_COUNT=>1,
+                            ];
+
+                            // check number of bins and remove older ones
+                            $bin_times = array_keys($this->metric_period_bins[$metric][$period]);
+                            sort($bin_times, SORT_NUMERIC);
+                            while (count($bin_times) > $this->bins_count)
+                                unset($this->metric_period_bins[$metric][$period][array_shift($bin_times)]);
+                        }
+                    }
+                    else
+                    {
+                        if (empty($period_first[$period]))
+                            $period_first[$period] = $this->periodNextBin($period, $time);
+                        $this->metric_period_bins[$metric][$period][$period_first[$period]] = [
+                            self::BIN_LAST_TIME=>$time,
+                            self::BIN_LAST_VALUE=>$value,
+                            self::BIN_MIN_VALUE=>$value,
+                            self::BIN_MAX_VALUE=>$value,
+                            self::BIN_SUM=>$value,
+                            self::BIN_COUNT=>1,
+                        ];
+                    }
+                }
+            }
+            else
+            {
+                if (empty($period_first))
+                {
+                    foreach ($this->periods as $period=>$format)
+                        $period_first[$period] = $this->periodNextBin($period, $time);
+                }
+                foreach ($this->periods as $period=>$format)
+                {
+                    $this->metric_period_bins[$metric][$period][$period_first[$period]] = [
+                        self::BIN_LAST_TIME=>$time,
+                        self::BIN_LAST_VALUE=>$value,
+                        self::BIN_MIN_VALUE=>$value,
+                        self::BIN_MAX_VALUE=>$value,
+                        self::BIN_SUM=>$value,
+                        self::BIN_COUNT=>1,
+                    ];
+                }
+            }
+        }
+
+        // write the structure to the file
+        if (! $this->open(self::MODE_WRITE))
+            return false;
+
+        $errors = [];
+        foreach ($this->metric_period_bins as $metric=>$periods)
+        {
+            foreach ($periods as $period=>$bins)
+            {
+                foreach ($bins as $bin_tm=>$values)
+                {
+                    if (! fputcsv($this->handle, array_merge([$metric, $period, $bin_tm], $values)))
+                        $errors[] = sprintf(
+                            "%s: error updating metric '%s', period '%s', bin '%s' in %s datafile",
+                            __METHOD__,
+                            $metric,
+                            $period,
+                            date('Y-m-d H:i:s', $bin_tm),
+                            $this->filename
+                        );
+                }
+            }
+        }
+        if ($errors)
+        {
+            $this->error = implode(PHP_EOL, $errors);
             return false;
         }
 
         return true;
 	}
 
-	public function insertOne($time, $metric, $value)
-	{
-        if (empty($this->handle) and ! $this->open(self::MODE_WRITE))
-            return false;
-
-        if (fputcsv($this->handle, [$time, $metric, $value]))
-            return 1;
-        else
-        {
-            $this->error = sprintf(
-                "%s: error inserting '%s' = '%s' at %s into %s datafile",
-                __METHOD__,
-                $metric,
-                $value,
-                date('Y-m-d H:i:s', $time),
-                $this->filename
-            );
-            return false;
-        }
-	}
-
-	public function insertMany($metrics=[])
-	{
-        if (empty($this->handle) and ! $this->open(self::MODE_WRITE))
-            return false;
-
-        $errors = [];
-        if (! empty($metrics) and is_array($metrics))
-        {
-            foreach ((array)$metrics as $metric=>$arr)
-                if (! fputcsv($this->handle, [$arr[0], $metric, $arr[1]]))
-                    $errors[] = sprintf(
-                        "%s: error inserting '%s' = '%s' at %s into %s datafile",
-                        __METHOD__,
-                        $metric,
-                        $arr[1],
-                        date('Y-m-d H:i:s', $arr[0]),
-                        $this->filename
-                    );
-        }
-
-        if ($errors)
-        {
-            $this->error = implode(PHP_EOL, $errors);
-            return false;
-        }
-        else
-            return true;
-	}
-
-    public function load($items, $periods)
+    public function load()
 	{
         if (empty($this->handle) and ! $this->open(self::MODE_READ))
             return false;
 
-        if (! $this->preload($periods))
-            return false;
-
-        $min_time = min($this->start_time);
-        if (empty($min_time))
-        {
-            $this->error = __METHOD__.': periods are not defined';
-            return false;
-        }
-
-        // skip older records
-        do
-        {
-            $line = fgetcsv($this->handle);
-        }
-        while ($line !== false
-            and (empty($line[self::FLD_TIME]) or $line[self::FLD_TIME] < $min_time)
-        );
-
-        // exit if no fresh records found
-        if ($line === false)
-        {
-            $this->error = __METHOD__.': file scanned, no data found';
-            return false;
-        }
-
-        $metric_period_bins = [];   // {"metric":{"-2 days":{"bin1time":{},...},...},...}
         // read fresh records and store in corresponding bins
-        for (;$line !== false; $line = fgetcsv($this->handle))
+        while ($line = fgetcsv($this->handle))
         {
-            if (! isset($line[self::FLD_VALUE]))
+            if (! isset($line[7]))
                 continue;
 
-            $line_time = $line[self::FLD_TIME];
-            foreach ($this->start_time as $name=>$start_tm)
-            {
-                if ($line_time > $start_tm)
-                {
-                    foreach ($this->period_times[$name] as $tm)
-                        if ($line_time < $tm)
-                            break;
-                    if (empty($metric_period_bins[$line[self::FLD_METRIC]][$name][$tm]))
-                        $metric_period_bins[$line[self::FLD_METRIC]][$name][$tm] = [
-                            self::BIN_VALUE_MIN=>$line[self::FLD_VALUE],
-                            self::BIN_VALUE_MAX=>$line[self::FLD_VALUE],
-                            self::BIN_VALUE_SUM=>$line[self::FLD_VALUE],
-                            self::BIN_VALUE_CNT=>1,
-                        ];
-                    else
-                    {
-                        $bin = &$metric_period_bins[$line[self::FLD_METRIC]][$name][$tm];
-                        if ($line[self::FLD_VALUE] < $bin[self::BIN_VALUE_MIN])
-                            $bin[self::BIN_VALUE_MIN] = $line[self::FLD_VALUE];
-                        if ($bin[self::BIN_VALUE_MAX] < $line[self::FLD_VALUE])
-                            $bin[self::BIN_VALUE_MAX] = $line[self::FLD_VALUE];
-                        $bin[self::BIN_VALUE_SUM] += $line[self::FLD_VALUE];
-                        ++$bin[self::BIN_VALUE_CNT];
-                    }
-                }
-            }
+            list($metric, $period, $bin_tm, $time, $last, $min, $max, $sum, $cnt) = $line;
+            $this->metric_period_bins[$metric][$period][$bin_tm] = [
+                self::BIN_LAST_TIME=>$time,
+                self::BIN_LAST_VALUE=>$last,
+                self::BIN_MIN_VALUE=>$min,
+                self::BIN_MAX_VALUE=>$max,
+                self::BIN_SUM=>$sum,
+                self::BIN_COUNT=>$cnt,
+            ];
         }
 
-        return $metric_period_bins;
+        return $this->close();
 	}
 }

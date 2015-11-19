@@ -6,7 +6,7 @@ Class Export
 {
     public $error;
 
-    public function export($items)
+    public function export($metrics, $items)
     {
         return true;
     }

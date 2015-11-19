@@ -46,7 +46,12 @@ Class Monitask
 
         if (self::$ini = self::parseIni($config_file))
 		{
-            // process core directives
+            // CORE DIRECTIVES
+
+            // configure periods
+            self::$periods = self::arrayExtract(self::$ini, self::VAR_PERIOD);
+            if (! is_array(self::$periods))
+                self::$periods = [];
 
             // configure datastore
             $datastore = self::arrayExtract(self::$ini, self::SECTION_DATASTORE);
@@ -55,7 +60,7 @@ Class Monitask
 				switch ($ds_type)
 				{
 				case self::DS_TYPE_CSV:
-					self::$store = new CsvStore($datastore);
+					self::$store = new CsvStore($datastore, self::$periods);
 					break;
 				case self::DS_TYPE_SQLITE:
 					self::$store = new SQLiteStore($datastore);
@@ -107,11 +112,8 @@ Class Monitask
                 }
 			}
 
-            self::$periods = self::arrayExtract(self::$ini, self::VAR_PERIOD);
-            if (! is_array(self::$periods))
-                self::$periods = [];
+            // COMMON DIRECTIVES
 
-            // process common directives
             self::processIni(self::$ini);
 
             return true;
@@ -229,9 +231,6 @@ Class Monitask
         $errors = [];
         foreach (self::$commands as $key=>$cmd)
         {
-            // get current time
-            $time = microtime(true);
-
             // run commands
             $errorlevel = 0;
             $output = [];
@@ -244,7 +243,7 @@ Class Monitask
             {
                 // collect metrics
                 foreach ($m[1] as $k=>$v)
-                    self::$metrics[$v] = [$time, rtrim($m[2][$k])];
+                    self::$metrics[$v] = rtrim($m[2][$k]);
             }
             else
                 $errors[] = "unformatted output from $key: $cmd";
@@ -252,7 +251,7 @@ Class Monitask
 
         // store metrics
         if (self::$metrics
-            and ! self::$store->insertMany(self::$metrics)
+            and ! self::$store->insertMetrics($_SERVER['REQUEST_TIME'], self::$metrics)
         )
             $errors[] = self::$store->error;
 
@@ -282,10 +281,9 @@ Class Monitask
             error_log(self::VAR_PERIOD.' directive is not set');
             return false;
         }
-        elseif ($data = self::$store->load(self::$items, self::$periods))
+        elseif ($metrics = self::$store->load(self::$periods, self::$items))
         {
-print_r($data);
-            if (self::$export->export($data))
+            if (self::$export->export($metrics, self::$items))
                 return true;
             else
             {

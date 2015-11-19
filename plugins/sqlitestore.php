@@ -75,31 +75,7 @@ EOsq;
         return true;
 	}
 
-	public function insertOne($time, $metric, $value)
-	{
-        if (empty($this->db) and ! $this->open())
-            return false;
-
-        if (sqlite_exec(
-            $this->db,
-            sprintf(
-                "insert into %s (%s, %s, %s) values (%u,'%s','%s')",
-                self::TBL_LOG,
-                self::FLD_UPDATE,
-                self::FLD_METRIC,
-                self::FLD_VALUE,
-                $time,
-                sqlite_escape_string($metric),
-                sqlite_escape_string($value)
-            ),
-            $this->error
-        ))
-            return sqlite_changes($this->db);
-        else
-            return false;
-	}
-
-	public function insertMany($metrics=[])
+	public function insertMetrics($metrics=[])
 	{
         if (empty($this->db) and ! $this->open())
             return false;
