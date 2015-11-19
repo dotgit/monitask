@@ -55,8 +55,10 @@ Class CsvStore extends Store
         }
         foreach ($periods as $name=>$format)
         {
-            if ($period_tm = strtotime($format))
-                $this->periods_seconds[$name] = (int)((time() - $period_tm)/$this->bins_count);
+            if ($period_tm = strtotime($format)
+                and $period_tm < $_SERVER['REQUEST_TIME']
+            )
+                $this->periods_seconds[$name] = (int)(($_SERVER['REQUEST_TIME'] - $period_tm)/$this->bins_count);
             else
                 $errors[] = __METHOD__.": wrong strtotime format '$format' in period '$name'";
         }
