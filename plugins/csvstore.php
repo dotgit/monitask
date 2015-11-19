@@ -152,6 +152,8 @@ Class CsvStore extends Store
                         else
                         {
                             $this->metric_period_bins[$metric][$period][$bin_tm] = [
+                                self::BIN_FIRST_TIME=>$time,
+                                self::BIN_FIRST_VALUE=>$value,
                                 self::BIN_LAST_TIME=>$time,
                                 self::BIN_LAST_VALUE=>$value,
                                 self::BIN_MIN_VALUE=>$value,
@@ -172,6 +174,8 @@ Class CsvStore extends Store
                         if (empty($period_first[$period]))
                             $period_first[$period] = $this->periodNextBin($period, $time);
                         $this->metric_period_bins[$metric][$period][$period_first[$period]] = [
+                            self::BIN_FIRST_TIME=>$time,
+                            self::BIN_FIRST_VALUE=>$value,
                             self::BIN_LAST_TIME=>$time,
                             self::BIN_LAST_VALUE=>$value,
                             self::BIN_MIN_VALUE=>$value,
@@ -192,6 +196,8 @@ Class CsvStore extends Store
                 foreach ($this->periods as $period=>$format)
                 {
                     $this->metric_period_bins[$metric][$period][$period_first[$period]] = [
+                        self::BIN_FIRST_TIME=>$time,
+                        self::BIN_FIRST_VALUE=>$value,
                         self::BIN_LAST_TIME=>$time,
                         self::BIN_LAST_VALUE=>$value,
                         self::BIN_MIN_VALUE=>$value,
@@ -243,12 +249,22 @@ Class CsvStore extends Store
         // read fresh records and store in corresponding bins
         while ($line = fgetcsv($this->handle))
         {
-            if (! isset($line[7]))
+            if (count($line) < 9)
                 continue;
 
-            list($metric, $period, $bin_tm, $time, $last, $min, $max, $sum, $cnt) = $line;
+            if (count($line) == 9)
+            {
+                list($metric, $period, $bin_tm, $last_time, $last, $min, $max, $sum, $cnt) = $line;
+                $first_time = $last_time;
+                $first = $last;
+            }
+            else
+                list($metric, $period, $bin_tm, $first_time, $first, $last_time, $last, $min, $max, $sum, $cnt) = $line;
+
             $this->metric_period_bins[$metric][$period][$bin_tm] = [
-                self::BIN_LAST_TIME=>$time,
+                self::BIN_FIRST_TIME=>$first_time,
+                self::BIN_FIRST_VALUE=>$first,
+                self::BIN_LAST_TIME=>$last_time,
                 self::BIN_LAST_VALUE=>$last,
                 self::BIN_MIN_VALUE=>$min,
                 self::BIN_MAX_VALUE=>$max,
