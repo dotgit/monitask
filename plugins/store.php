@@ -95,7 +95,7 @@ Class Store
                 if ($cnt)
                 {
                     $stats[self::BIN_COUNT] = $cnt;
-                    $stats[self::BIN_AVG] = sum($avgs) / $cnt;
+                    $stats[self::BIN_AVG] = array_sum($avgs) / count($avgs);
                 }
             }
         }
