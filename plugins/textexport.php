@@ -44,18 +44,26 @@ Class TextExport extends Export
                             switch ($m_types[$metric_name])
                             {
                             case self::TYPE_INCREMENT:
-                                $last = $stats[Store::BIN_LAST_VALUE];
-                                $min = $stats[Store::BIN_MIN_VALUE];
-                                $avg = $stats[Store::BIN_AVG];
-                                $max = $stats[Store::BIN_MAX_VALUE];
+                                $last = $stats[Store::BIN_LAST_INC];
+                                $min = $stats[Store::BIN_MIN_INC];
+                                $avg = $stats[Store::BIN_AVG_INC];
+                                $max = $stats[Store::BIN_MAX_INC];
                                 break;
                             default:
                                 $last = $stats[Store::BIN_LAST_VALUE];
                                 $min = $stats[Store::BIN_MIN_VALUE];
-                                $avg = $stats[Store::BIN_AVG];
+                                $avg = $stats[Store::BIN_AVG_VALUE];
                                 $max = $stats[Store::BIN_MAX_VALUE];
                             }
-                            printf("%-{$label_len}s %6s %6s %6s %6s%s", $m_label, $last, $min, $avg, $max, PHP_EOL);
+                            printf(
+                                "%-{$label_len}s %6s %6s %6s %6s%s",
+                                $m_label,
+                                Lib::humanFloat($last),
+                                Lib::humanFloat($min),
+                                Lib::humanFloat($avg),
+                                Lib::humanFloat($max),
+                                PHP_EOL
+                            );
                         }
                     }
                     echo PHP_EOL;
