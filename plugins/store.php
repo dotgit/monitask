@@ -119,7 +119,7 @@ Class Store
                 // compute averages
                 $stats[self::BIN_COUNT] = $cnt;
                 $stats[self::BIN_AVG_VALUE] = array_sum($avgs) / count($avgs);
-                $stats[self::BIN_AVG_INC] = array_sum($avgs) / count($avgs);
+                $stats[self::BIN_AVG_INC] = array_sum($avgs_i) / count($avgs_i);
             }
         }
 
