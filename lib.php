@@ -37,6 +37,9 @@ Class Lib
      */
     public static function humanFloat($amount)
     {
+        if (! isset($amount))
+            return null;
+
         $amount_abs = \abs($amount);
         if ($amount_abs >= 1000000000000000)
             return ($amount_abs >= 100000000000000000
