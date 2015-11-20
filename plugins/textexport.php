@@ -6,10 +6,6 @@ use Lib;
 
 Class TextExport extends Export
 {
-    public function __construct($params)
-    {
-    }
-
     public function export($items, $periods, Store $store)
     {
         foreach ($items as $block=>$bk_items)
@@ -59,7 +55,7 @@ Class TextExport extends Export
                                 $avg = $stats[Store::BIN_AVG];
                                 $max = $stats[Store::BIN_MAX_VALUE];
                             }
-                            printf("%-{$label_len}s %6s%6s%6s%6s%s", $m_label, $last, $min, $avg, $max, PHP_EOL);
+                            printf("%-{$label_len}s %6s %6s %6s %6s%s", $m_label, $last, $min, $avg, $max, PHP_EOL);
                         }
                     }
                     echo PHP_EOL;

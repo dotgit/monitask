@@ -72,7 +72,7 @@ Class Store
                 $stats[self::BIN_LAST_TIME] = $metric_period[$last_bin][self::BIN_LAST_TIME];
                 $stats[self::BIN_LAST_VALUE] = $metric_period[$last_bin][self::BIN_LAST_VALUE];
 
-                // compute min, max and avg values
+                // compute min, max, count and avg values
                 $avgs = [];
                 $cnt = 0;
                 foreach ($bins as $bin)
@@ -92,11 +92,8 @@ Class Store
                     // collect avg for bin
                     $avgs[] = $metric_period[$bin][self::BIN_SUM]/$metric_period[$bin][self::BIN_COUNT];
                 }
-                if ($cnt)
-                {
-                    $stats[self::BIN_COUNT] = $cnt;
-                    $stats[self::BIN_AVG] = array_sum($avgs) / count($avgs);
-                }
+                $stats[self::BIN_COUNT] = $cnt;
+                $stats[self::BIN_AVG] = array_sum($avgs) / count($avgs);
             }
         }
 
