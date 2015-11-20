@@ -2,7 +2,7 @@
 
 namespace Plugins;
 
-use Monitask;
+use Lib;
 
 Class TextExport extends Export
 {
@@ -16,14 +16,14 @@ Class TextExport extends Export
         {
             if (! empty($bk_items) and is_array($bk_items))
             {
-                echo $block, PHP_EOL;
+                echo $block, PHP_EOL, PHP_EOL;
                 foreach ($bk_items as $item_name=>$item)
                 {
-                    $label = Monitask::arrayExtract($item, self::VAR_LABEL);
-                    $vert_label = Monitask::arrayExtract($item, self::VAR_VERT_LABEL);
-                    $base = Monitask::arrayExtract($item, self::VAR_BASE);
-                    $max_value = Monitask::arrayExtract($item, self::VAR_MAX_VALUE);
-                    $crit_value = Monitask::arrayExtract($item, self::VAR_CRIT_VALUE);
+                    $label = Lib::arrayExtract($item, self::VAR_LABEL);
+                    $vert_label = Lib::arrayExtract($item, self::VAR_VERT_LABEL);
+                    $base = Lib::arrayExtract($item, self::VAR_BASE);
+                    $max_value = Lib::arrayExtract($item, self::VAR_MAX_VALUE);
+                    $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
 
                     $label_len = 0;
                     $m_labels = [];
@@ -32,8 +32,8 @@ Class TextExport extends Export
                     {
                         if (is_array($metric))
                         {
-                            $m_labels[$metric_name] = Monitask::arrayExtract($metric, self::METRIC_LABEL, $metric_name);
-                            $m_types[$metric_name] = Monitask::arrayExtract($metric, self::METRIC_TYPE, self::TYPE_NORMAL);
+                            $m_labels[$metric_name] = Lib::arrayExtract($metric, self::METRIC_LABEL, $metric_name);
+                            $m_types[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TYPE, self::TYPE_NORMAL);
                             $label_len = max($label_len, strlen($m_labels[$metric_name]));
                         }
                     }
@@ -48,25 +48,21 @@ Class TextExport extends Export
                             switch ($m_types[$metric_name])
                             {
                             case self::TYPE_INCREMENT:
-                                list($last, $min, $avg, $max) = [
-                                    $stats[Store::BIN_LAST_VALUE] - $stats[Store::BIN_FIRST_VALUE],
-                                    $stats[Store::BIN_MIN_VALUE],
-                                    $stats[Store::BIN_AVG],
-                                    $stats[Store::BIN_MAX_VALUE],
-                                ];
+                                $last = $stats[Store::BIN_LAST_VALUE] - $stats[Store::BIN_FIRST_VALUE];
+                                $min = null;
+                                $avg = null;
+                                $max = null;
                                 break;
-                            case self::TYPE_NORMAL:
-                                list($last, $min, $avg, $max) = [
-                                    $stats[Store::BIN_LAST_VALUE],
-                                    $stats[Store::BIN_MIN_VALUE],
-                                    $stats[Store::BIN_AVG],
-                                    $stats[Store::BIN_MAX_VALUE],
-                                ];
-                                break;
+                            default:
+                                $last = $stats[Store::BIN_LAST_VALUE];
+                                $min = $stats[Store::BIN_MIN_VALUE];
+                                $avg = $stats[Store::BIN_AVG];
+                                $max = $stats[Store::BIN_MAX_VALUE];
                             }
                             printf("%-{$label_len}s %6s%6s%6s%6s%s", $m_label, $last, $min, $avg, $max, PHP_EOL);
                         }
                     }
+                    echo PHP_EOL;
                 }
             }
         }

@@ -49,13 +49,13 @@ Class Monitask
             // CORE DIRECTIVES
 
             // configure periods
-            self::$periods = self::arrayExtract(self::$ini, self::VAR_PERIOD);
+            self::$periods = Lib::arrayExtract(self::$ini, self::VAR_PERIOD);
             if (! is_array(self::$periods))
                 self::$periods = [];
 
             // configure datastore
-            $datastore = self::arrayExtract(self::$ini, self::SECTION_DATASTORE);
-			if ($ds_type = self::arrayExtract($datastore, self::DATASTORE_TYPE))
+            $datastore = Lib::arrayExtract(self::$ini, self::SECTION_DATASTORE);
+			if ($ds_type = Lib::arrayExtract($datastore, self::DATASTORE_TYPE))
 			{
 				switch ($ds_type)
 				{
@@ -83,10 +83,10 @@ Class Monitask
 			}
 
             // configure export
-            $export = self::arrayExtract(self::$ini, self::SECTION_EXPORT);
+            $export = Lib::arrayExtract(self::$ini, self::SECTION_EXPORT);
 			if (isset($export[self::EXPORT_TYPE]))
 			{
-				$ex_type = self::arrayExtract($export, self::EXPORT_TYPE);
+				$ex_type = Lib::arrayExtract($export, self::EXPORT_TYPE);
 				switch ($ex_type)
 				{
 				case self::XP_TYPE_TEXT:
@@ -146,15 +146,15 @@ Class Monitask
     public static function processIni($ini)
     {
         // merge commands
-        $commands = self::arrayExtract($ini, self::SECTION_COMMANDS);
+        $commands = Lib::arrayExtract($ini, self::SECTION_COMMANDS);
         if ($commands)
             self::$commands = array_merge_recursive(self::$commands, $commands);
 
         // get includes
-        $includes = self::arrayExtract($ini, self::VAR_INCLUDE);
+        $includes = Lib::arrayExtract($ini, self::VAR_INCLUDE);
 
         // get block name and start periods
-        $block = self::arrayExtract($ini, self::VAR_BLOCK);
+        $block = Lib::arrayExtract($ini, self::VAR_BLOCK);
 
         // import items
         if (! empty($ini))
@@ -180,23 +180,6 @@ Class Monitask
         }
 
         return true;
-    }
-
-	public static function arrayExtract(&$arr, $index, $default=null)
-    {
-        if (is_array($arr))
-        {
-            if (array_key_exists($index, $arr))
-            {
-                $res = $arr[$index];
-                unset($arr[$index]);
-                return $res;
-            }
-            else
-                return $default;
-        }
-        else
-            return false;
     }
 
 	public static function createStore()
