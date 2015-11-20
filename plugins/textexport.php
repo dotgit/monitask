@@ -48,10 +48,10 @@ Class TextExport extends Export
                             switch ($m_types[$metric_name])
                             {
                             case self::TYPE_INCREMENT:
-                                $last = $stats[Store::BIN_LAST_VALUE] - $stats[Store::BIN_FIRST_VALUE];
-                                $min = null;
-                                $avg = null;
-                                $max = null;
+                                $last = $stats[Store::BIN_LAST_VALUE];
+                                $min = $stats[Store::BIN_MIN_VALUE];
+                                $avg = $stats[Store::BIN_AVG];
+                                $max = $stats[Store::BIN_MAX_VALUE];
                                 break;
                             default:
                                 $last = $stats[Store::BIN_LAST_VALUE];
