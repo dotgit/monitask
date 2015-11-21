@@ -2,7 +2,9 @@
 
 Class Lib
 {
-	public static function arrayExtract(&$arr, $index, $default=null)
+    const CHARSET = 'UTF-8';
+
+    public static function arrayExtract(&$arr, $index, $default=null)
     {
         if (is_array($arr))
         {

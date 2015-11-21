@@ -249,17 +249,15 @@ Class CsvStore extends Store
             if (count($line) < 11)
                 continue;
 
-            if (count($line) == 11)
-            {
-                list($metric, $period, $bin_tm, $first_time, $first_value, $last_time, $last_value, $min_value, $max_value, $sum_value, $cnt) = $line;
-                $first_inc = 0;
-                $last_inc = 0;
-                $min_inc = 0;
-                $max_inc = 0;
-                $sum_inc = 0;
-            }
-            else
-                list($metric, $period, $bin_tm, $first_time, $first_value, $first_inc, $last_time, $last_value, $last_inc, $min_value, $min_inc, $max_value, $max_inc, $sum_value, $sum_inc, $cnt) = $line;
+            list(
+                $metric, $period, $bin_tm,
+                $first_time, $first_value, $first_inc,
+                $last_time, $last_value, $last_inc,
+                $min_value, $min_inc,
+                $max_value, $max_inc,
+                $sum_value, $sum_inc,
+                $cnt
+            ) = $line;
 
             $this->metric_period_bins[$metric][$period][$bin_tm] = [
                 self::BIN_FIRST_TIME=>$first_time,

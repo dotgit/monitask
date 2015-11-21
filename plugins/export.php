@@ -15,9 +15,6 @@ Class Export
     const METRIC_LABEL  = 'label';
     const METRIC_TYPE   = 'type';
 
-    const TYPE_INCREMENT    = 'increment';
-    const TYPE_NORMAL       = 'normal';
-
     public $error;
 
     public function export($items, $periods, Store $store)
