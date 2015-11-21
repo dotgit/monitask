@@ -12,16 +12,17 @@ Class TextExport extends Export
         {
             if (! empty($bk_items) and is_array($bk_items))
             {
-                echo $block, PHP_EOL, PHP_EOL;
+                echo $block, PHP_EOL, str_repeat('=', mb_strlen($block, Lib::CHARSET)), PHP_EOL;
                 foreach ($bk_items as $item_name=>$item)
                 {
-                    echo '----------',PHP_EOL;
-                    $label = Lib::arrayExtract($item, self::VAR_LABEL);
+                    $label = Lib::arrayExtract($item, self::VAR_LABEL, $item_name);
                     $vert_label = Lib::arrayExtract($item, self::VAR_VERT_LABEL);
                     $base = Lib::arrayExtract($item, self::VAR_BASE);
                     $max_value = Lib::arrayExtract($item, self::VAR_MAX_VALUE);
                     $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
                     $lower_limit = Lib::arrayExtract($item, self::VAR_LOWER_LIMIT);
+
+                    echo str_repeat('-', mb_strlen($label, Lib::CHARSET)),PHP_EOL;
 
                     $label_len = 0;
                     $m_labels = [];
