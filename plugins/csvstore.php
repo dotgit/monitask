@@ -279,15 +279,6 @@ Class CsvStore extends Store
                 $cnt
             ) = $line;
 
-            if ($first_tm_inc == $this->periods_seconds[$period])
-                $first_tm_inc = 300;
-            if ($last_tm_inc == $this->periods_seconds[$period])
-                $last_tm_inc = 300;
-            if ($min_tm_inc == $this->periods_seconds[$period])
-                $min_tm_inc = 300;
-            if ($max_tm_inc == $this->periods_seconds[$period])
-                $max_tm_inc = 300;
-
             $this->metric_period_bins[$metric][$period][$bin_tm] = [
                 self::BIN_FIRST_TIME=>$first_time,
                 self::BIN_FIRST_TM_INC=>$first_tm_inc,
