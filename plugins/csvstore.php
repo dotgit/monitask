@@ -269,34 +269,24 @@ Class CsvStore extends Store
             if (count($line) < 16)
                 continue;
 
-            if (count($line) == 16)
-            {
-                list(
-                    $metric, $period, $bin_tm,
-                    $first_time, $first_value, $first_inc,
-                    $last_time, $last_value, $last_inc,
-                    $min_value, $min_inc,
-                    $max_value, $max_inc,
-                    $sum_value, $sum_inc,
-                    $cnt
-                ) = $line;
-                $first_tm_inc = $this->periods_seconds[$period];
-                $last_tm_inc = $this->periods_seconds[$period];
-                $min_tm_inc = $this->periods_seconds[$period];
-                $max_tm_inc = $this->periods_seconds[$period];
-            }
-            else
-            {
-                list(
-                    $metric, $period, $bin_tm,
-                    $first_time, $first_tm_inc, $first_value, $first_inc,
-                    $last_time, $last_tm_inc, $last_value, $last_inc,
-                    $min_tm_inc, $min_value, $min_inc,
-                    $max_tm_inc, $max_value, $max_inc,
-                    $sum_value, $sum_inc,
-                    $cnt
-                ) = $line;
-            }
+            list(
+                $metric, $period, $bin_tm,
+                $first_time, $first_tm_inc, $first_value, $first_inc,
+                $last_time, $last_tm_inc, $last_value, $last_inc,
+                $min_tm_inc, $min_value, $min_inc,
+                $max_tm_inc, $max_value, $max_inc,
+                $sum_value, $sum_inc,
+                $cnt
+            ) = $line;
+
+            if ($first_tm_inc == $this->periods_seconds[$period])
+                $first_tm_inc = 300;
+            if ($last_tm_inc == $this->periods_seconds[$period])
+                $last_tm_inc = 300;
+            if ($min_tm_inc == $this->periods_seconds[$period])
+                $min_tm_inc = 300;
+            if ($max_tm_inc == $this->periods_seconds[$period])
+                $max_tm_inc = 300;
 
             $this->metric_period_bins[$metric][$period][$bin_tm] = [
                 self::BIN_FIRST_TIME=>$first_time,
