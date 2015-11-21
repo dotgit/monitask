@@ -20,6 +20,7 @@ Class TextExport extends Export
                     $base = Lib::arrayExtract($item, self::VAR_BASE);
                     $max_value = Lib::arrayExtract($item, self::VAR_MAX_VALUE);
                     $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
+                    $lower_limit = Lib::arrayExtract($item, self::VAR_LOWER_LIMIT);
 
                     $label_len = 0;
                     $m_labels = [];

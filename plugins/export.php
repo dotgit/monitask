@@ -10,6 +10,7 @@ Class Export
     const VAR_BASE          = 'base';
     const VAR_MAX_VALUE     = 'max_value';
     const VAR_CRIT_VALUE    = 'critical_value';
+    const VAR_LOWER_LIMIT   = 'lower_limit';
 
     // metric description
     const METRIC_LABEL  = 'label';
