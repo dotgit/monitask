@@ -15,6 +15,7 @@ Class TextExport extends Export
                 echo $block, PHP_EOL, PHP_EOL;
                 foreach ($bk_items as $item_name=>$item)
                 {
+                    echo '----------',PHP_EOL;
                     $label = Lib::arrayExtract($item, self::VAR_LABEL);
                     $vert_label = Lib::arrayExtract($item, self::VAR_VERT_LABEL);
                     $base = Lib::arrayExtract($item, self::VAR_BASE);
