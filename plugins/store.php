@@ -6,18 +6,22 @@ Class Store
 {
     // bin parameters
     const BIN_FIRST_TIME    = 0;
-    const BIN_FIRST_VALUE   = 1;
-    const BIN_FIRST_INC     = 2;
-    const BIN_LAST_TIME     = 3;
-    const BIN_LAST_VALUE    = 4;
-    const BIN_LAST_INC      = 5;
-    const BIN_MIN_VALUE     = 6;
-    const BIN_MIN_INC       = 7;
-    const BIN_MAX_VALUE     = 8;
-    const BIN_MAX_INC       = 9;
-    const BIN_SUM_VALUE     = 10;
-    const BIN_SUM_INC       = 11;
-    const BIN_COUNT         = 12;
+    const BIN_FIRST_TM_INC  = 1;
+    const BIN_FIRST_VALUE   = 2;
+    const BIN_FIRST_INC     = 3;
+    const BIN_LAST_TIME     = 4;
+    const BIN_LAST_TM_INC   = 5;
+    const BIN_LAST_VALUE    = 6;
+    const BIN_LAST_INC      = 7;
+    const BIN_MIN_TM_INC    = 8;
+    const BIN_MIN_VALUE     = 9;
+    const BIN_MIN_INC       = 10;
+    const BIN_MAX_TM_INC    = 11;
+    const BIN_MAX_VALUE     = 12;
+    const BIN_MAX_INC       = 13;
+    const BIN_SUM_VALUE     = 14;
+    const BIN_SUM_INC       = 15;
+    const BIN_COUNT         = 16;
 
     const STAT_FIRST    = 'f';
     const STAT_LAST     = 'l';
@@ -69,23 +73,17 @@ Class Store
             {
             case self::TYPE_VALUE:
                 foreach ($this->metric_period_bins[$metric][$period] as $bin_tm=>$bin)
-                    $data[$bin_tm] = $bin[self::BIN_SUM_VALUE]/($bin[self::BIN_COUNT]);
+                    $data[$bin_tm] = $bin[self::BIN_SUM_VALUE]/$bin[self::BIN_COUNT];
                 break;
 
             case self::TYPE_RATE:
-                $prev_bin = null;
                 foreach ($this->metric_period_bins[$metric][$period] as $bin_tm=>$bin)
-                {
-                    $data[$bin_tm] = $bin[self::BIN_COUNT] > 1
-                        ? $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME])
-                        : $bin[self::BIN_SUM_INC]/($bin[self::BIN_FIRST_TIME] - $prev_bin[self::BIN_LAST_TIME]);
-                    $prev_bin = $bin;
-                }
+                    $data[$bin_tm] = $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] + $bin[self::BIN_FIRST_TM_INC]);
                 break;
 
             case self::TYPE_INC:
                 foreach ($this->metric_period_bins[$metric][$period] as $bin_tm=>$bin)
-                    $data[$bin_tm] = $bin[self::BIN_SUM_INC]/($bin[self::BIN_COUNT]);
+                    $data[$bin_tm] = $bin[self::BIN_SUM_INC]/$bin[self::BIN_COUNT];
                 break;
             }
         }
@@ -119,8 +117,8 @@ Class Store
                     break;
 
                 case self::TYPE_RATE:
-                    $stats[self::STAT_FIRST] = null;
-                    $stats[self::STAT_LAST] = null;
+                    $stats[self::STAT_FIRST] = $metric_period[$first_bin][self::BIN_FIRST_INC]/$metric_period[$first_bin][self::BIN_FIRST_TM_INC];
+                    $stats[self::STAT_LAST] = $metric_period[$last_bin][self::BIN_LAST_INC]/$metric_period[$last_bin][self::BIN_LAST_TM_INC];
                     break;
 
                 case self::TYPE_INC:
@@ -132,66 +130,61 @@ Class Store
                 // compute min, max, count and avg values
                 $sum = 0;
                 $cnt = 0;
-                $prev_bin = null;
-                foreach ($bins as $bin)
+                foreach ($bins as $bin_tm)
                 {
-                    $this_bin = $metric_period[$bin];
+                    $bin = $metric_period[$bin_tm];
+
+                    // increment count value
+                    $cnt += $bin[self::BIN_COUNT];
+
+                    // collect min, max, sum
                     switch ($type)
                     {
                     case self::TYPE_VALUE:
                         // set min value
                         if (! isset($stats[self::STAT_MIN])
-                            or $this_bin[self::BIN_MIN_VALUE] < $stats[self::STAT_MIN]
+                            or $bin[self::BIN_MIN_VALUE] < $stats[self::STAT_MIN]
                         )
-                            $stats[self::STAT_MIN] = $this_bin[self::BIN_MIN_VALUE];
+                            $stats[self::STAT_MIN] = $bin[self::BIN_MIN_VALUE];
                         // set max value
                         if (! isset($stats[self::STAT_MAX])
-                            or $stats[self::STAT_MAX] < $this_bin[self::BIN_MAX_VALUE]
+                            or $stats[self::STAT_MAX] < $bin[self::BIN_MAX_VALUE]
                         )
-                            $stats[self::STAT_MAX] = $this_bin[self::BIN_MAX_VALUE];
+                            $stats[self::STAT_MAX] = $bin[self::BIN_MAX_VALUE];
                         // collect sum
-                        $sum += $this_bin[self::BIN_SUM_VALUE];
+                        $sum += $bin[self::BIN_SUM_VALUE];
                         break;
 
                     case self::TYPE_RATE:
-                        $rate = $this_bin[self::BIN_COUNT] > 1
-                            ? $this_bin[self::BIN_SUM_INC]/($this_bin[self::BIN_LAST_TIME] - $this_bin[self::BIN_FIRST_TIME])
-                            : (isset($prev_bin)
-                                ? $this_bin[self::BIN_SUM_INC]/($this_bin[self::BIN_FIRST_TIME] - $prev_bin[self::BIN_LAST_TIME])
-                                : null
-                            );
                         // set min value
                         if (! isset($stats[self::STAT_MIN])
-                            or $rate < $stats[self::STAT_MIN]
+                            or $bin[self::BIN_MIN_INC]/$bin[self::BIN_MIN_TM_INC] < $stats[self::STAT_MIN]
                         )
-                            $stats[self::STAT_MIN] = $rate;
+                            $stats[self::STAT_MIN] = $bin[self::BIN_MIN_INC]/$bin[self::BIN_MIN_TM_INC];
                         // set max value
                         if (! isset($stats[self::STAT_MAX])
-                            or $stats[self::STAT_MAX] < $rate
+                            or $stats[self::STAT_MAX] < $bin[self::BIN_MAX_INC]/$bin[self::BIN_MAX_TM_INC]
                         )
-                            $stats[self::STAT_MAX] = $rate;
+                            $stats[self::STAT_MAX] = $bin[self::BIN_MAX_INC]/$bin[self::BIN_MAX_TM_INC];
                         // collect sum
-                        $sum += $rate;
+                        $sum += $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] + $bin[self::BIN_FIRST_TM_INC]);
                         break;
 
                     case self::TYPE_INC:
                         // set min value
                         if (! isset($stats[self::STAT_MIN])
-                            or $this_bin[self::BIN_MIN_INC] < $stats[self::STAT_MIN]
+                            or $bin[self::BIN_MIN_INC] < $stats[self::STAT_MIN]
                         )
-                            $stats[self::STAT_MIN] = $this_bin[self::BIN_MIN_INC];
+                            $stats[self::STAT_MIN] = $bin[self::BIN_MIN_INC];
                         // set max value
                         if (! isset($stats[self::STAT_MAX])
-                            or $stats[self::STAT_MAX] < $this_bin[self::BIN_MAX_INC]
+                            or $stats[self::STAT_MAX] < $bin[self::BIN_MAX_INC]
                         )
-                            $stats[self::STAT_MAX] = $this_bin[self::BIN_MAX_INC];
+                            $stats[self::STAT_MAX] = $bin[self::BIN_MAX_INC];
                         // collect sum
-                        $sum += $this_bin[self::BIN_SUM_INC];
+                        $sum += $bin[self::BIN_SUM_INC];
                         break;
                     }
-                    // increment count value
-                    $cnt += $this_bin[self::BIN_COUNT];
-                    $prev_bin = $bin;
                 }
                 // compute average, $cnt is > 0
                 $stats[self::STAT_AVG] = $sum/$cnt;

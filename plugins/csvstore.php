@@ -151,46 +151,66 @@ Class CsvStore extends Store
 
                 if (isset($this->metric_period_bins[$metric][$period][$bin_id]))
                 {
-                    $inc = $value - $this->metric_period_bins[$metric][$period][$bin_prev_id][self::BIN_LAST_VALUE];
                     $bin = &$this->metric_period_bins[$metric][$period][$bin_id];
+                    $time_inc = $time - $bin[self::BIN_LAST_TIME];
+                    $value_inc = $value - $bin[self::BIN_LAST_VALUE];
 
-                    // set last value and increment
-                    $bin[self::BIN_LAST_TIME] = $time;
-                    $bin[self::BIN_LAST_VALUE] = $value;
-                    $bin[self::BIN_LAST_INC] = $inc;
-                    // set min value and increment
-                    if ($value < $bin[self::BIN_MIN_VALUE])
-                        $bin[self::BIN_MIN_VALUE] = $value;
-                    if (! isset($bin[self::BIN_MIN_INC]) or $inc < $bin[self::BIN_MIN_INC])
-                        $bin[self::BIN_MIN_INC] = $inc;
-                    // set max value and increment
-                    if ($bin[self::BIN_MAX_VALUE] < $value)
-                        $bin[self::BIN_MAX_VALUE] = $value;
-                    if (! isset($bin[self::BIN_MAX_INC]) or $bin[self::BIN_MAX_INC] < $inc)
-                        $bin[self::BIN_MAX_INC] = $inc;
-                    // set sum of values and increments
-                    $bin[self::BIN_SUM_VALUE] += $value;
-                    $bin[self::BIN_SUM_INC] += $inc;
-                    ++$bin[self::BIN_COUNT];
+                    // only update if time changed
+                    if ($time_inc)
+                    {
+                        // set last value and increment
+                        $bin[self::BIN_LAST_TIME] = $time;
+                        $bin[self::BIN_LAST_TM_INC] = $time_inc;
+                        $bin[self::BIN_LAST_VALUE] = $value;
+                        $bin[self::BIN_LAST_INC] = $value_inc;
+                        $rate = $value_inc / $time_inc;
+                        // set min value and rate
+                        if ($value < $bin[self::BIN_MIN_VALUE])
+                            $bin[self::BIN_MIN_VALUE] = $value;
+                        if ($rate < $bin[self::BIN_MIN_INC]/$bin[self::BIN_MIN_TM_INC])
+                        {
+                            $bin[self::BIN_MIN_TM_INC] = $time_inc;
+                            $bin[self::BIN_MIN_INC] = $value_inc;
+                        }
+                        // set max value and rate
+                        if ($bin[self::BIN_MAX_VALUE] < $value)
+                            $bin[self::BIN_MAX_VALUE] = $value;
+                        if ($bin[self::BIN_MAX_INC]/$bin[self::BIN_MAX_TM_INC] < $rate)
+                        {
+                            $bin[self::BIN_MAX_TM_INC] = $time_inc;
+                            $bin[self::BIN_MAX_INC] = $value_inc;
+                        }
+                        // set sum of values and increments
+                        $bin[self::BIN_SUM_VALUE] += $value;
+                        $bin[self::BIN_SUM_INC] += $value_inc;
+                        ++$bin[self::BIN_COUNT];
+                    }
                 }
                 else
                 {
-                    $inc = isset($bin_prev_id)
+                    $value_inc = isset($bin_prev_id)
                         ? $value - $this->metric_period_bins[$metric][$period][$bin_prev_id][self::BIN_LAST_VALUE]
-                        : null;
+                        : 0;
+                    $time_inc = isset($bin_prev_id)
+                        ? $time - $this->metric_period_bins[$metric][$period][$bin_prev_id][self::BIN_LAST_TIME]
+                        : $this->periods_seconds[$period];
                     $this->metric_period_bins[$metric][$period][$bin_id] = [
                         self::BIN_FIRST_TIME=>$time,
+                        self::BIN_FIRST_TM_INC=>$time_inc,
                         self::BIN_FIRST_VALUE=>$value,
-                        self::BIN_FIRST_INC=>$inc,
+                        self::BIN_FIRST_INC=>$value_inc,
                         self::BIN_LAST_TIME=>$time,
+                        self::BIN_LAST_TM_INC=>$time_inc,
                         self::BIN_LAST_VALUE=>$value,
-                        self::BIN_LAST_INC=>$inc,
+                        self::BIN_LAST_INC=>$value_inc,
+                        self::BIN_MIN_TM_INC=>$time_inc,
                         self::BIN_MIN_VALUE=>$value,
-                        self::BIN_MIN_INC=>$inc,
+                        self::BIN_MIN_INC=>$value_inc,
+                        self::BIN_MAX_TM_INC=>$time_inc,
                         self::BIN_MAX_VALUE=>$value,
-                        self::BIN_MAX_INC=>$inc,
+                        self::BIN_MAX_INC=>$value_inc,
                         self::BIN_SUM_VALUE=>$value,
-                        self::BIN_SUM_INC=>$inc,
+                        self::BIN_SUM_INC=>$value_inc,
                         self::BIN_COUNT=>1,
                     ];
                 }
@@ -246,28 +266,51 @@ Class CsvStore extends Store
         // read fresh records and store in corresponding bins
         while ($line = fgetcsv($this->handle))
         {
-            if (count($line) < 11)
+            if (count($line) < 16)
                 continue;
 
-            list(
-                $metric, $period, $bin_tm,
-                $first_time, $first_value, $first_inc,
-                $last_time, $last_value, $last_inc,
-                $min_value, $min_inc,
-                $max_value, $max_inc,
-                $sum_value, $sum_inc,
-                $cnt
-            ) = $line;
+            if (count($line) == 16)
+            {
+                list(
+                    $metric, $period, $bin_tm,
+                    $first_time, $first_value, $first_inc,
+                    $last_time, $last_value, $last_inc,
+                    $min_value, $min_inc,
+                    $max_value, $max_inc,
+                    $sum_value, $sum_inc,
+                    $cnt
+                ) = $line;
+                $first_tm_inc = $this->periods_seconds[$period];
+                $last_tm_inc = $this->periods_seconds[$period];
+                $min_tm_inc = $this->periods_seconds[$period];
+                $max_tm_inc = $this->periods_seconds[$period];
+            }
+            else
+            {
+                list(
+                    $metric, $period, $bin_tm,
+                    $first_time, $first_tm_inc, $first_value, $first_inc,
+                    $last_time, $last_tm_inc, $last_value, $last_inc,
+                    $min_tm_inc, $min_value, $min_inc,
+                    $max_tm_inc, $max_value, $max_inc,
+                    $sum_value, $sum_inc,
+                    $cnt
+                ) = $line;
+            }
 
             $this->metric_period_bins[$metric][$period][$bin_tm] = [
                 self::BIN_FIRST_TIME=>$first_time,
+                self::BIN_FIRST_TM_INC=>$first_tm_inc,
                 self::BIN_FIRST_VALUE=>$first_value,
                 self::BIN_FIRST_INC=>$first_inc,
                 self::BIN_LAST_TIME=>$last_time,
+                self::BIN_LAST_TM_INC=>$last_tm_inc,
                 self::BIN_LAST_VALUE=>$last_value,
                 self::BIN_LAST_INC=>$last_inc,
+                self::BIN_MIN_TM_INC=>$min_tm_inc,
                 self::BIN_MIN_VALUE=>$min_value,
                 self::BIN_MIN_INC=>$min_inc,
+                self::BIN_MAX_TM_INC=>$max_tm_inc,
                 self::BIN_MAX_VALUE=>$max_value,
                 self::BIN_MAX_INC=>$max_inc,
                 self::BIN_SUM_VALUE=>$sum_value,
