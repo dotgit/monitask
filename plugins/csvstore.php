@@ -230,6 +230,8 @@ Class CsvStore extends Store
         if (! $this->open(self::MODE_WRITE))
             return false;
 
+        ksort($this->metric_period_bins);
+
         $errors = [];
         foreach ($this->metric_period_bins as $metric=>$periods)
         {
