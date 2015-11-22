@@ -5,7 +5,10 @@ namespace Plugins;
 Class CsvStore extends Store
 {
     // datastore section of ini file
-    const VAR_FILENAME      = 'filename';
+    const VAR_FILENAME  = 'filename';
+
+    // datastore type
+    const TYPE_CSV  = 'csv';
 
     // file open modes
     const MODE_READ     = 'r';

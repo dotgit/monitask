@@ -4,7 +4,10 @@ namespace Plugins;
 
 Class TableExport extends Export
 {
-    // output section of ini file
+    // export type
+    const TYPE_TABLE = 'table';
+
+    // export section of ini file
     const VAR_EXPORT_DIR    = 'export_dir';
 
 	public $export_dir;

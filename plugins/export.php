@@ -4,6 +4,9 @@ namespace Plugins;
 
 Class Export
 {
+    // export section of ini file
+    const VAR_TYPE  = 'type';
+
     // block section of ini file
     const VAR_LABEL         = 'label';
     const VAR_VERT_LABEL    = 'vertical_label';

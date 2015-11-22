@@ -6,6 +6,9 @@ use Lib;
 
 Class TextExport extends Export
 {
+    // export type
+    const TYPE_TEXT = 'text';
+
     public function export($items, $periods, Store $store)
     {
         $info = rtrim(`uname -n`).'   '.date('Y-m-d H:i:s', $_SERVER['REQUEST_TIME']);

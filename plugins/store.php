@@ -5,8 +5,10 @@ namespace Plugins;
 Class Store
 {
     // datastore section of ini file
+    const VAR_BLOCK         = 'block';
     const VAR_START_TIME    = 'start_time';
     const VAR_BINS          = 'bins';
+    const VAR_TYPE          = 'type';
 
     // bin parameters
     const BIN_FIRST_TIME    = 0;

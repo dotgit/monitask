@@ -1,31 +1,21 @@
 <?php
 
 use Plugins\CsvStore;
-use Plugins\SQLiteStore;
+use Plugins\Export;
+use Plugins\Store;
 use Plugins\TableExport;
 use Plugins\TextExport;
 
 Class Monitask
 {
-    // global vars
+    // global vars of ini file
     const VAR_INCLUDE   = 'include';
-    const VAR_BLOCK     = 'block';
     const VAR_PERIOD    = 'period';
 
     // main sections
     const SECTION_DATASTORE = 'datastore';
     const SECTION_EXPORT    = 'export';
     const SECTION_COMMANDS  = 'commands';
-
-    // datastore types
-    const DATASTORE_TYPE    = 'type';
-    const DS_TYPE_SQLITE    = 'sqlite';
-    const DS_TYPE_CSV       = 'csv';
-
-    // export types
-    const EXPORT_TYPE   = 'type';
-    const XP_TYPE_TEXT  = 'text';
-    const XP_TYPE_TABLE = 'table';
 
 	public static $platform;        // "freebsd"
 	public static $architecture;    // "amd64"
@@ -57,22 +47,18 @@ Class Monitask
 
             // configure datastore
             $datastore = Lib::arrayExtract(self::$ini, self::SECTION_DATASTORE);
-			if ($ds_type = Lib::arrayExtract($datastore, self::DATASTORE_TYPE))
+			if ($ds_type = Lib::arrayExtract($datastore, Store::VAR_TYPE))
 			{
 				switch ($ds_type)
 				{
-				case self::DS_TYPE_CSV:
+				case CsvStore::TYPE_CSV:
 					self::$store = new CsvStore($datastore, self::$periods);
-					break;
-				case self::DS_TYPE_SQLITE:
-					self::$store = new SQLiteStore($datastore);
 					break;
 				default:
                     error_log(sprintf(
-                        "%s is not an implemented engine, use '%s' or '%s'",
+                        "%s is not an implemented engine, use '%s'",
                         $ds_type,
-                        self::DS_TYPE_CSV,
-                        self::DS_TYPE_SQLITE
+                        CsvStore::TYPE_CSV
                     ));
 					return false;
 				}
@@ -86,23 +72,23 @@ Class Monitask
 
             // configure export
             $export = Lib::arrayExtract(self::$ini, self::SECTION_EXPORT);
-			if (isset($export[self::EXPORT_TYPE]))
+			if (isset($export[Export::VAR_TYPE]))
 			{
-				$ex_type = Lib::arrayExtract($export, self::EXPORT_TYPE);
+				$ex_type = Lib::arrayExtract($export, Export::VAR_TYPE);
 				switch ($ex_type)
 				{
-				case self::XP_TYPE_TEXT:
+				case TextExport::TYPE_TEXT:
 					self::$export = new TextExport($export);
 					break;
-				case self::XP_TYPE_TABLE:
+				case TableExport::TYPE_TABLE:
 					self::$export = new TableExport($export);
 					break;
 				default:
                     error_log(sprintf(
                         "%s is not an implemented engine, use '%s' or '%s'",
                         $ex_type,
-                        self::XP_TYPE_TEXT,
-                        self::XP_TYPE_TABLE
+                        TextExport::TYPE_TEXT,
+                        TableExport::TYPE_TABLE
                     ));
 					return false;
 				}
@@ -174,7 +160,7 @@ Class Monitask
         $includes = Lib::arrayExtract($ini, self::VAR_INCLUDE);
 
         // get block name and start periods
-        $block = Lib::arrayExtract($ini, self::VAR_BLOCK);
+        $block = Lib::arrayExtract($ini, Store::VAR_BLOCK);
 
         // import items
         if (! empty($ini))
