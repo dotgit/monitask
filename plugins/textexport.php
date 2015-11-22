@@ -22,8 +22,6 @@ Class TextExport extends Export
                     $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
                     $lower_limit = Lib::arrayExtract($item, self::VAR_LOWER_LIMIT);
 
-                    echo str_repeat('-', mb_strlen($label, Lib::CHARSET)),PHP_EOL;
-
                     $label_len = 0;
                     $m_labels = [];
                     $m_types = [];
@@ -38,6 +36,8 @@ Class TextExport extends Export
                         }
                     }
                     ++$label_len;
+
+                    echo str_repeat('-', mb_strlen($label_len + 5*6, Lib::CHARSET)),PHP_EOL;
 
                     foreach ($periods as $period=>$format)
                     {
