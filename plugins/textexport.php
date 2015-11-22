@@ -8,11 +8,19 @@ Class TextExport extends Export
 {
     public function export($items, $periods, Store $store)
     {
+        $info = `uname -n`.' ['.date('Y-m-d H:i:s', $_SERVER['REQUEST_TIME']).']';
+
+        echo str_repeat('+', mb_strlen($info, Lib::CHARSET)),PHP_EOL,
+            $info,PHP_EOL,
+            str_repeat('+', mb_strlen($info, Lib::CHARSET)),PHP_EOL;
+
         foreach ($items as $block=>$bk_items)
         {
             if (! empty($bk_items) and is_array($bk_items))
             {
-                echo $block, PHP_EOL, str_repeat('=', mb_strlen($block, Lib::CHARSET)), PHP_EOL;
+                echo $block,PHP_EOL,
+                    str_repeat('=', mb_strlen($block, Lib::CHARSET)), PHP_EOL;
+
                 foreach ($bk_items as $item_name=>$item)
                 {
                     $label = Lib::arrayExtract($item, self::VAR_LABEL, $item_name);
