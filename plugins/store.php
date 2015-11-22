@@ -4,6 +4,10 @@ namespace Plugins;
 
 Class Store
 {
+    // datastore section of ini file
+    const VAR_START_TIME    = 'start_time';
+    const VAR_BINS          = 'bins';
+
     // bin parameters
     const BIN_FIRST_TIME    = 0;
     const BIN_FIRST_TM_INC  = 1;
@@ -33,8 +37,11 @@ Class Store
     const TYPE_RATE     = 'rate';
     const TYPE_INC      = 'increment';
 
+    public $start_time;
     public $periods             = [];
+    public $periods_seconds     = [];
     public $metric_period_bins  = [];
+	public $bins_count;
     public $error;
 
     /** creates and initializes datastore
@@ -45,22 +52,28 @@ Class Store
 		return true;
 	}
 
-    /** insert all metrics at once
-     * @param int $time         time when metrics were collected
-     * @param array $metrics    {"metric-name":"value", ...}
-     * @return boolean
-     */
-	public function insertMetrics($time, $metrics)
-	{
-		return true;
-	}
-
     /** loads metrics from the datastore and calculates the values per period per bin
      * @return array|boolean    {"metric":{"by day":{"bin1time":["last time", "last", "min", "max", "sum", "cnt"],...},...},...}
      */
 	public function load()
 	{
 		return true;
+	}
+
+    /** writes metrics to the datastore
+     * @return boolean
+     */
+	public function flush()
+	{
+		return true;
+	}
+
+	public function periodNextBin($period, $time, $bin_times=[])
+	{
+        $tm = $bin_times ? max($bin_times) : $this->start_time;
+        while ($tm < $time)
+            $tm += $this->periods_seconds[$period];
+        return $tm;
 	}
 
     public function getMetricData($metric, $period, $type=self::TYPE_VALUE)
@@ -193,4 +206,118 @@ Class Store
 
         return $stats;
     }
+
+    /** insert all metrics into the datastore
+     * @param int $time         time when metrics were collected
+     * @param array $metrics    {"metric-name":"value", ...}
+     * @return boolean
+     */
+    public function insertMetrics($time, $metrics=[])
+	{
+        if (! $this->load())
+            return false;
+
+        // insert metrics into existing bin or create a new one
+        $period_first = [];
+        foreach ($metrics as $metric=>$value)
+        {
+            foreach ($this->periods as $period=>$format)
+            {
+                if (isset($this->metric_period_bins[$metric][$period]))
+                {
+                    $bin_times = array_keys($this->metric_period_bins[$metric][$period]);
+                    $bin_prev_id = max($bin_times);
+                    $bin_id = $this->periodNextBin($period, $time, $bin_times);
+                }
+                elseif (isset($period_first[$period]))
+                {
+                    $bin_prev_id = null;
+                    $bin_id = $period_first[$period];
+                }
+                else
+                {
+                    $bin_prev_id = null;
+                    $bin_id = $period_first[$period] = $this->periodNextBin($period, $time);
+                }
+
+                if (isset($this->metric_period_bins[$metric][$period][$bin_id]))
+                {
+                    $bin = &$this->metric_period_bins[$metric][$period][$bin_id];
+                    $time_inc = $time - $bin[self::BIN_LAST_TIME];
+                    $value_inc = $value - $bin[self::BIN_LAST_VALUE];
+
+                    // only update if time changed
+                    if ($time_inc)
+                    {
+                        // set last value and increment
+                        $bin[self::BIN_LAST_TIME] = $time;
+                        $bin[self::BIN_LAST_TM_INC] = $time_inc;
+                        $bin[self::BIN_LAST_VALUE] = $value;
+                        $bin[self::BIN_LAST_INC] = $value_inc;
+                        $rate = $value_inc / $time_inc;
+                        // set min value and rate
+                        if ($value < $bin[self::BIN_MIN_VALUE])
+                            $bin[self::BIN_MIN_VALUE] = $value;
+                        if ($rate < $bin[self::BIN_MIN_INC]/$bin[self::BIN_MIN_TM_INC])
+                        {
+                            $bin[self::BIN_MIN_TM_INC] = $time_inc;
+                            $bin[self::BIN_MIN_INC] = $value_inc;
+                        }
+                        // set max value and rate
+                        if ($bin[self::BIN_MAX_VALUE] < $value)
+                            $bin[self::BIN_MAX_VALUE] = $value;
+                        if ($bin[self::BIN_MAX_INC]/$bin[self::BIN_MAX_TM_INC] < $rate)
+                        {
+                            $bin[self::BIN_MAX_TM_INC] = $time_inc;
+                            $bin[self::BIN_MAX_INC] = $value_inc;
+                        }
+                        // set sum of values and increments
+                        $bin[self::BIN_SUM_VALUE] += $value;
+                        $bin[self::BIN_SUM_INC] += $value_inc;
+                        ++$bin[self::BIN_COUNT];
+                    }
+                }
+                else
+                {
+                    $value_inc = isset($bin_prev_id)
+                        ? $value - $this->metric_period_bins[$metric][$period][$bin_prev_id][self::BIN_LAST_VALUE]
+                        : 0;
+                    $time_inc = isset($bin_prev_id)
+                        ? $time - $this->metric_period_bins[$metric][$period][$bin_prev_id][self::BIN_LAST_TIME]
+                        : $this->periods_seconds[$period];
+                    $this->metric_period_bins[$metric][$period][$bin_id] = [
+                        self::BIN_FIRST_TIME=>$time,
+                        self::BIN_FIRST_TM_INC=>$time_inc,
+                        self::BIN_FIRST_VALUE=>$value,
+                        self::BIN_FIRST_INC=>$value_inc,
+                        self::BIN_LAST_TIME=>$time,
+                        self::BIN_LAST_TM_INC=>$time_inc,
+                        self::BIN_LAST_VALUE=>$value,
+                        self::BIN_LAST_INC=>$value_inc,
+                        self::BIN_MIN_TM_INC=>$time_inc,
+                        self::BIN_MIN_VALUE=>$value,
+                        self::BIN_MIN_INC=>$value_inc,
+                        self::BIN_MAX_TM_INC=>$time_inc,
+                        self::BIN_MAX_VALUE=>$value,
+                        self::BIN_MAX_INC=>$value_inc,
+                        self::BIN_SUM_VALUE=>$value,
+                        self::BIN_SUM_INC=>$value_inc,
+                        self::BIN_COUNT=>1,
+                    ];
+                }
+
+                // if added new bin then check number of bins and remove older ones
+                if ($bin_prev_id != $bin_id and isset($bin_prev_id))
+                {
+                    $bin_times = array_keys($this->metric_period_bins[$metric][$period]);
+                    sort($bin_times, SORT_NUMERIC);
+                    while (count($bin_times) > $this->bins_count)
+                        unset($this->metric_period_bins[$metric][$period][array_shift($bin_times)]);
+                }
+            }
+        }
+
+        // write the structure to the file
+        return $this->flush();
+	}
 }
