@@ -37,7 +37,7 @@ Class TextExport extends Export
                     }
                     ++$label_len;
 
-                    echo str_repeat('-', mb_strlen($label_len + 5*6, Lib::CHARSET)),PHP_EOL;
+                    echo str_repeat('-', mb_strlen($label_len, Lib::CHARSET) + 5*6),PHP_EOL;
 
                     foreach ($periods as $period=>$format)
                     {
