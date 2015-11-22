@@ -28,6 +28,7 @@ Class Monitask
     const XP_TYPE_TABLE = 'table';
 
 	public static $platform;        // "freebsd"
+	public static $architecture;    // "amd64"
     public static $ini;             // {ini file contents}
 	public static $periods = [];    // {"period-name":"strtotime-pattern", ...}
 	public static $includes = [];   // {"file-full-name":true, ...}
@@ -43,6 +44,7 @@ Class Monitask
         define('DIR', __DIR__);
 
         self::$platform = strtolower(trim(`uname`));
+        self::$architecture = strtolower(trim(`uname -p`));
 
         if (self::$ini = self::parseIni($config_file))
 		{
@@ -127,15 +129,33 @@ Class Monitask
 
 	public static function parseIni($config_file)
 	{
-        if ($config_fullname = realpath($config_file) and $ini = parse_ini_file($config_fullname, true))
+        if ($config_fullname = realpath($config_file)
+            and $ini = parse_ini_file($config_fullname, true)
+        )
         {
-            // merge platform config
             $path = pathinfo($config_fullname);
-            $platform_fullname = $path['dirname'].DIRECTORY_SEPARATOR.
+            // merge platform config
+            $platf_fullname =
+                (isset($path['dirname']) ? $path['dirname'].DIRECTORY_SEPARATOR : '').
                 "{$path['filename']}-".self::$platform.
                 (isset($path['extension']) ? ".{$path['extension']}" : '');
-            if (file_exists($platform_fullname) and $ini_pl = parse_ini_file($platform_fullname, true))
-                $ini = array_replace_recursive($ini, $ini_pl);
+            if (file_exists($platf_fullname)
+                and $ini_platf = parse_ini_file($platf_fullname, true)
+            )
+            {
+                $ini = array_replace_recursive($ini, $ini_platf);
+            }
+            // merge platform-architecture config
+            $platf_arch_fullname =
+                (isset($path['dirname']) ? $path['dirname'].DIRECTORY_SEPARATOR : '').
+                "{$path['filename']}-".self::$platform.'-'.self::$architecture.
+                (isset($path['extension']) ? ".{$path['extension']}" : '');
+            if (file_exists($platf_arch_fullname)
+                and $ini_platf_arch = parse_ini_file($platf_arch_fullname, true)
+            )
+            {
+                $ini = array_replace_recursive($ini, $ini_platf_arch);
+            }
 
             return $ini;
         }
