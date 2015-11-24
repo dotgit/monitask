@@ -22,7 +22,12 @@ Class Export
 
     public $error;
 
-    public function export($items, $periods, Store $store)
+    public function template(array $items, array $periods, Store $store)
+    {
+        return true;
+    }
+
+    public function export(array $items, array $periods, Store $store)
     {
         return true;
     }

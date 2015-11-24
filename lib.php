@@ -4,6 +4,15 @@ Class Lib
 {
     const CHARSET = 'UTF-8';
 
+    public static function sanitizeFilename($string)
+    {
+        return \trim(\preg_replace(
+            '/\\W+/',
+            '-',
+            \mb_strtolower(trim($string), self::CHARSET)
+        ), '-');
+    }
+
     public static function arrayExtract(&$arr, $index, $default=null)
     {
         if (is_array($arr))

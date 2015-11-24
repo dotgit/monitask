@@ -1,0 +1,189 @@
+<?php
+
+namespace Plugins;
+
+use Lib;
+
+Class GChartsExport extends Export
+{
+    // export type
+    const TYPE_GCHARTS = 'gcharts';
+
+    // export section of ini file
+    const VAR_EXPORT_DIR    = 'export_dir';
+
+    // types of values
+    const T_INT     = 'i';
+    const T_FLOAT   = 'f';
+    const T_PCT     = 'p';
+    const T_TIME    = 't';
+    const T_STRING  = 's';
+
+	public $export_dir;
+
+    public function __construct($params)
+    {
+        if (empty($params[self::VAR_EXPORT_DIR]) or ! is_dir($params[self::VAR_EXPORT_DIR]))
+            $this->error = __METHOD__.': '.self::VAR_EXPORT_DIR.' parameter not set or is not a directory';
+        else
+            $this->export_dir = realpath($params[self::VAR_EXPORT_DIR]);
+    }
+
+    public function gcVal($value, $type=self::T_FLOAT)
+    {
+        switch ($type)
+        {
+        case self::T_INT:
+        case self::T_FLOAT:
+            return ['v'=>$value, 'f'=>Lib::humanFloat($value)];
+        case self::T_PCT:
+            return ['v'=>$value, 'f'=>Lib::humanFloat($value*100).'%'];
+        case self::T_TIME:
+            return ['v'=>date('Y-m-d H:i:s', $value)];
+        default:
+            return $value;
+        }
+    }
+
+    public function template(array $items, array $periods, Store $store)
+    {
+        $period_sanitized = [];
+        foreach ($periods as $period_name=>$format)
+            $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
+        $packages = [];
+        $blocks = [];
+        $charts = [];
+        foreach ($items as $block=>$bk_items)
+        {
+            $bk_charts = [];
+            foreach ($bk_items as $item_name=>$item)
+            {
+                $metrics = [];
+                foreach ($item as $metric_name=>$metric)
+                {
+                    if (is_array($metric))
+                    {
+                        $metrics[$metric_name] = true;
+                    }
+                }
+                foreach ($period_sanitized as $period_file)
+                {
+                    $id = "$item_name-$period_file";
+                    $chart_type = 'AreaChart';
+                    $bk_charts[] = "<div id=\"$id\"></div>";
+                    $packages[strtolower($chart_type)] = true;
+                    $charts[] = "getJsonDraw('$id.json',".json_encode([
+                        "containerId"=>$id,
+                        "chartType"=>$chart_type,
+                        'options'=>[
+                            'fontName'=>'Roboto',
+                            'fontSize'=>12,
+                            'height'=>300,
+                            'isStacked'=>true,
+                        ],
+                    ]).');';
+                }
+            }
+            $blocks[] =
+                '<h2>'.htmlspecialchars($block, null, Lib::CHARSET).'</h2>'.PHP_EOL.
+                implode(PHP_EOL, $bk_charts);
+        }
+        $charts_js = implode(PHP_EOL, $charts);
+        $packages_js = json_encode(['packages'=>array_keys($packages)]);
+        $now = date('Y-m-d H:i:s', $_SERVER['REQUEST_TIME']);
+
+        // vars for template
+        $Hostname = htmlspecialchars(rtrim(`hostname`), null, Lib::CHARSET);
+        $Html_container =
+            "<h1 class=\"page-header\">$Hostname <small>$now</small></h1>".
+            implode(PHP_EOL, $blocks);
+        $Js_footer =
+<<<EOjs
+google.load('visualization', '1', {packages:['corechart']});
+google.setOnLoadCallback(drawChart);
+function getJsonDraw(url,chart){
+    $.ajax({
+        url:url,
+        success:function(data){
+            chart['dataTable'] = data;
+            google.visualization.drawChart(chart);
+        },
+        dataType:"json"
+    });
+}
+function drawChart(){
+$charts_js
+}
+EOjs;
+
+        include 'plugins/gchartstemplate.php';
+
+        return true;
+    }
+
+    public function export(array $items, array $periods, Store $store)
+    {
+        $period_sanitized = [];
+        foreach ($periods as $period_name=>$format)
+            $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
+        foreach ($items as $block=>$bk_items)
+        {
+            foreach ($bk_items as $item_name=>$item)
+            {
+                foreach ($period_sanitized as $period=>$period_filename)
+                {
+                    $period_data[$period] = [
+                        ['time'=>''],
+                    ];
+                }
+                foreach ($item as $metric_name=>$metric)
+                {
+                    if (is_array($metric))
+                    {
+                        $type = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
+                        foreach ($period_sanitized as $period=>$period_filename)
+                        {
+                            $period_data[$period][0][$metric_name] = $metric_name;
+                            foreach ($store->getMetricData($metric_name, $period, $type) as $time=>$value)
+                            {
+                                $period_data[$period][$time][$metric_name] = $this->gcVal($value, self::T_FLOAT);
+                            }
+                        }
+                    }
+                }
+                foreach ($period_sanitized as $period=>$period_filename)
+                {
+                    $rows = [];
+                    foreach ($period_data[$period] as $bin_id=>$row)
+                    {
+                        if ($bin_id)
+                        {
+                            $r = [];
+                            foreach ($cols as $c)
+                                $r[] = is_array($c) ? 'Date('.date('Y,m,d,H,i,s', $bin_id).')' : (isset($row[$c]) ? $row[$c] : 0);
+                            $rows[] = $r;
+                        }
+                        else
+                        {
+                            $cols = array_values($row);
+                            $cols[0] = ['type'=>'datetime'];
+                            $rows[] = $cols;
+                        }
+                    }
+                    file_put_contents(
+                        sprintf(
+                            '%s%s%s-%s.json',
+                            $this->export_dir,
+                            DIRECTORY_SEPARATOR,
+                            Lib::sanitizeFilename($item_name),
+                            $period_filename
+                        ),
+                        json_encode($rows, JSON_PRETTY_PRINT)
+                    );
+                }
+            }
+        }
+
+        return true;
+    }
+}

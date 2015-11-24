@@ -3,7 +3,7 @@
 use Plugins\CsvStore;
 use Plugins\Export;
 use Plugins\Store;
-use Plugins\TableExport;
+use Plugins\GChartsExport;
 use Plugins\TextExport;
 
 Class Monitask
@@ -80,15 +80,15 @@ Class Monitask
 				case TextExport::TYPE_TEXT:
 					self::$export = new TextExport($export);
 					break;
-				case TableExport::TYPE_TABLE:
-					self::$export = new TableExport($export);
+				case GChartsExport::TYPE_GCHARTS:
+					self::$export = new GChartsExport($export);
 					break;
 				default:
                     error_log(sprintf(
                         "%s is not an implemented engine, use '%s' or '%s'",
                         $ex_type,
                         TextExport::TYPE_TEXT,
-                        TableExport::TYPE_TABLE
+                        GChartsExport::TYPE_GCHARTS
                     ));
 					return false;
 				}
@@ -206,7 +206,18 @@ Class Monitask
 
 	public static function outputTemplate()
     {
-        include 'template.php';
+        if (empty(self::$export))
+        {
+            error_log('['.self::SECTION_EXPORT.'] section is not configured');
+            return false;
+        }
+        elseif (self::$export->template(self::$items, self::$periods, self::$store))
+            return true;
+        else
+        {
+            error_log(self::$export->error);
+            return false;
+        }
     }
 
 	public static function collectMetrics()
