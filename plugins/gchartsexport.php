@@ -168,8 +168,8 @@ EOjs;
                         if ($bin_id)
                         {
                             $r = [];
-                            foreach ($cols as $c)
-                                $r[] = is_array($c) ? 'Date('.date('Y,m,d,H,i,s', $bin_id).')' : (isset($row[$c]) ? $row[$c] : 0);
+                            foreach ($cols as $c=>$c_label)
+                                $r[] = is_array($c_label) ? 'Date('.date('Y,m,d,H,i,s', $bin_id).')' : (isset($row[$c]) ? $row[$c] : 0);
                             $rows[] = $r;
                         }
                         else
