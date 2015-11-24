@@ -172,7 +172,7 @@ EOjs;
                             foreach ($cols as $c=>$c_label)
                                 $r[] = is_array($c_label)
                                     ? str_replace('MON', date('m', $bin_id) - 1, 'Date('.date('Y,\M\O\N,d,H,i,s', $bin_id).')')
-                                    : (isset($row[$c]) ? $row[$c] : 0);
+                                    : (isset($row[$c]) ? $row[$c] : null);
                             $rows[] = $r;
                         }
                         else
