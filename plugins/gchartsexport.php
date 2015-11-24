@@ -13,8 +13,7 @@ Class GChartsExport extends Export
     const VAR_EXPORT_DIR    = 'export_dir';
 
     // types of values
-    const T_INT     = 'i';
-    const T_FLOAT   = 'f';
+    const T_NUMERIC = 'n';
     const T_PCT     = 'p';
     const T_TIME    = 't';
     const T_STRING  = 's';
@@ -29,17 +28,38 @@ Class GChartsExport extends Export
             $this->export_dir = realpath($params[self::VAR_EXPORT_DIR]);
     }
 
-    public function gcVal($value, $type=self::T_FLOAT)
+    public function gcDateTime($time)
+    {
+        return str_replace('MON', date('m', $time) - 1, 'Date('.date('Y,\M\O\N,d,H,i,s', $time).')');
+    }
+
+    public function gcCol($label, $type=self::T_NUMERIC)
     {
         switch ($type)
         {
-        case self::T_INT:
-        case self::T_FLOAT:
-            return ['v'=>$value, 'f'=>Lib::humanFloat($value)];
+        case self::T_NUMERIC:
         case self::T_PCT:
-            return ['v'=>$value, 'f'=>Lib::humanFloat($value*100).'%'];
+            return ['label'=>$label, 'type'=>'number'];
         case self::T_TIME:
-            return ['v'=>date('Y-m-d H:i:s', $value)];
+            return ['label'=>$label, 'type'=>'datetime'];
+        default:
+            return ['label'=>$label, 'type'=>$type];
+        }
+    }
+
+    public function gcVal($value, $type=self::T_NUMERIC)
+    {
+        if (!isset($value))
+            return null;
+
+        switch ($type)
+        {
+        case self::T_NUMERIC:
+            return ['v'=>round($value, 6), 'f'=>(string)Lib::humanFloat($value)];
+        case self::T_PCT:
+            return ['v'=>round($value, 6), 'f'=>Lib::humanFloat($value*100).'%'];
+        case self::T_TIME:
+            return $this->gcDateTime($value);
         default:
             return $value;
         }
@@ -155,7 +175,7 @@ EOjs;
                             $period_data[$period][0][$metric_name] = $label;
                             foreach ($store->getMetricData($metric_name, $period, $type) as $time=>$value)
                             {
-                                $period_data[$period][$time][$metric_name] = $this->gcVal($value, self::T_FLOAT);
+                                $period_data[$period][$time][$metric_name] = $this->gcVal($value, self::T_NUMERIC);
                             }
                         }
                     }
@@ -171,7 +191,7 @@ EOjs;
                             $r = [];
                             foreach ($cols as $c=>$c_label)
                                 $r[] = is_array($c_label)
-                                    ? str_replace('MON', date('m', $bin_id) - 1, 'Date('.date('Y,\M\O\N,d,H,i,s', $bin_id).')')
+                                    ? $this->gcDateTime($bin_id)
                                     : (isset($row[$c]) ? $row[$c] : null);
                             $rows[] = $r;
                         }
