@@ -160,6 +160,7 @@ EOjs;
                         }
                     }
                 }
+                ksort($period_data[$period]);
                 foreach ($period_sanitized as $period=>$period_filename)
                 {
                     $rows = [];
