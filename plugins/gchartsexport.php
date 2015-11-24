@@ -161,7 +161,7 @@ EOjs;
                 foreach ($period_sanitized as $period=>$period_filename)
                 {
                     $period_data[$period] = [
-                        ['time'=>''],
+                        ['time'=>$this->gcCol($label, self::T_TIME)],
                     ];
                 }
                 foreach ($item as $metric_name=>$metric)
@@ -172,7 +172,7 @@ EOjs;
                         $type = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
                         foreach ($period_sanitized as $period=>$period_filename)
                         {
-                            $period_data[$period][0][$metric_name] = $label;
+                            $period_data[$period][0][$metric_name] = $this->gcCol($label, self::T_NUMERIC);
                             foreach ($store->getMetricData($metric_name, $period, $type) as $time=>$value)
                             {
                                 $period_data[$period][$time][$metric_name] = $this->gcVal($value, self::T_NUMERIC);
@@ -190,7 +190,7 @@ EOjs;
                         {
                             $r = [];
                             foreach ($cols as $c=>$c_label)
-                                $r[] = is_array($c_label)
+                                $r[] = $c == 'time'
                                     ? $this->gcDateTime($bin_id)
                                     : (isset($row[$c]) ? $row[$c] : null);
                             $rows[] = $r;
@@ -198,9 +198,14 @@ EOjs;
                         else
                         {
                             $cols = $row;
-                            $cols['time'] = ['type'=>'datetime'];
                             $rows[] = array_values($cols);
                         }
+                    }
+                    if (! $bin_id)
+                    {
+                        foreach ($cols as $c_label)
+                            $r[] = null;
+                        $rows[] = $r;
                     }
                     file_put_contents(
                         sprintf(
