@@ -58,6 +58,13 @@ Class GChartsExport extends Export
             $bk_charts = [];
             foreach ($bk_items as $item_name=>$item)
             {
+                $label = Lib::arrayExtract($item, self::VAR_LABEL, $item_name);
+                $vert_label = Lib::arrayExtract($item, self::VAR_VERT_LABEL);
+                $base = Lib::arrayExtract($item, self::VAR_BASE);
+                $max_value = Lib::arrayExtract($item, self::VAR_MAX_VALUE);
+                $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
+                $lower_limit = Lib::arrayExtract($item, self::VAR_LOWER_LIMIT);
+
                 $metrics = [];
                 foreach ($item as $metric_name=>$metric)
                 {
@@ -66,6 +73,7 @@ Class GChartsExport extends Export
                         $metrics[$metric_name] = true;
                     }
                 }
+                $bk_charts[] = '<h3>'.htmlspecialchars($label, null, Lib::CHARSET).'</h3>';
                 foreach ($period_sanitized as $period_file)
                 {
                     $id = "$item_name-$period_file";
@@ -140,10 +148,11 @@ EOjs;
                 {
                     if (is_array($metric))
                     {
+                        $label = Lib::arrayExtract($metric, self::METRIC_LABEL, $metric_name);
                         $type = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
                         foreach ($period_sanitized as $period=>$period_filename)
                         {
-                            $period_data[$period][0][$metric_name] = $metric_name;
+                            $period_data[$period][0][$metric_name] = $label;
                             foreach ($store->getMetricData($metric_name, $period, $type) as $time=>$value)
                             {
                                 $period_data[$period][$time][$metric_name] = $this->gcVal($value, self::T_FLOAT);
