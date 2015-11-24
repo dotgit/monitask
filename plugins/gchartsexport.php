@@ -174,9 +174,9 @@ EOjs;
                         }
                         else
                         {
-                            $cols = array_values($row);
-                            $cols[0] = ['type'=>'datetime'];
-                            $rows[] = $cols;
+                            $cols = $row;
+                            $cols['time'] = ['type'=>'datetime'];
+                            $rows[] = array_values($cols);
                         }
                     }
                     file_put_contents(
