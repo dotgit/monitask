@@ -13,10 +13,34 @@ Class GChartsExport extends Export
     const VAR_EXPORT_DIR    = 'export_dir';
 
     // types of values
-    const T_NUMERIC = 'n';
-    const T_PCT     = 'p';
-    const T_TIME    = 't';
-    const T_STRING  = 's';
+    const FMT_NUMERIC   = 'n';
+    const FMT_PCT       = 'p';
+    const FMT_TIMESTAMP = 't';
+
+    // column attributes
+    const GC_COL_LABEL  = 'label';
+    const GC_COL_TYPE   = 'type';
+    const GC_COL_ROLE   = 'role';
+
+    // column types
+    const GC_C_T_STRING     = 'string';
+    const GC_C_T_NUMBER     = 'number';
+    const GC_C_T_DATE       = 'date';
+    const GC_C_T_DATETIME   = 'datetime';
+    const GC_C_T_TIME       = 'time';
+    const GC_C_T_BOOLEAN    = 'boolean';
+
+    // column roles
+    const GC_C_R_ANNOTATION         = 'annotation';
+    const GC_C_R_ANNOTATION_TEXT    = 'annotationText';
+    const GC_C_R_INTERVAL           = 'interval';
+    const GC_C_R_CERTAINTY          = 'certainty';
+    const GC_C_R_EMPHASIS           = 'emphasis';
+    const GC_C_R_SCOPE              = 'scope';
+    const GC_C_R_STYLE              = 'style';
+    const GC_C_R_TOOLTIP            = 'tooltip';
+    const GC_C_R_DOMAIN             = 'domain';
+    const GC_C_R_DATA               = 'data';
 
 	public $export_dir;
 
@@ -33,32 +57,40 @@ Class GChartsExport extends Export
         return str_replace('MON', date('m', $time) - 1, 'Date('.date('Y,\M\O\N,d,H,i,s', $time).')');
     }
 
-    public function gcCol($label, $type=self::T_NUMERIC)
+    public function gcCol($format=self::FMT_NUMERIC, $label=null, $role=null)
     {
-        switch ($type)
+        switch($format)
         {
-        case self::T_NUMERIC:
-        case self::T_PCT:
-            return ['label'=>$label, 'type'=>'number'];
-        case self::T_TIME:
-            return ['label'=>$label, 'type'=>'datetime'];
+        case self::FMT_NUMERIC:
+        case self::FMT_PCT:
+            $col = [self::GC_COL_TYPE=>self::GC_C_T_NUMBER];
+            break;
+        case self::FMT_TIMESTAMP:
+            $col = [self::GC_COL_TYPE=>self::GC_C_T_DATETIME];
+            break;
         default:
-            return ['label'=>$label, 'type'=>$type];
+            $col = [self::GC_COL_TYPE=>self::GC_C_T_STRING];
         }
+        if (isset($label))
+            $col += [self::GC_COL_LABEL=>$label];
+        if (isset($role))
+            $col += [self::GC_COL_ROLE=>$role];
+
+        return $col;
     }
 
-    public function gcVal($value, $type=self::T_NUMERIC)
+    public function gcVal($value, $format=self::FMT_NUMERIC)
     {
         if (!isset($value))
             return null;
 
-        switch ($type)
+        switch ($format)
         {
-        case self::T_NUMERIC:
+        case self::FMT_NUMERIC:
             return ['v'=>round($value, 6), 'f'=>(string)Lib::humanFloat($value)];
-        case self::T_PCT:
+        case self::FMT_PCT:
             return ['v'=>round($value, 6), 'f'=>Lib::humanFloat($value*100).'%'];
-        case self::T_TIME:
+        case self::FMT_TIMESTAMP:
             return $this->gcDateTime($value);
         default:
             return $value;
@@ -108,8 +140,9 @@ Class GChartsExport extends Export
                             'fontSize'=>12,
                             'height'=>300,
                             'isStacked'=>true,
+                            'vAxis'=>['format'=>'short'],
                         ],
-                    ]).');';
+                    ], JSON_UNESCAPED_UNICODE).');';
                 }
             }
             $blocks[] =
@@ -118,12 +151,11 @@ Class GChartsExport extends Export
         }
         $charts_js = implode(PHP_EOL, $charts);
         $packages_js = json_encode(['packages'=>array_keys($packages)]);
-        $now = date('Y-m-d H:i:s', $_SERVER['REQUEST_TIME']);
 
         // vars for template
         $Hostname = htmlspecialchars(rtrim(`hostname`), null, Lib::CHARSET);
         $Html_container =
-            "<h1 class=\"page-header\">$Hostname <small>$now</small></h1>".
+            "<h1 class=\"page-header\">$Hostname</h1>".
             implode(PHP_EOL, $blocks);
         $Js_footer =
 <<<EOjs
@@ -161,7 +193,7 @@ EOjs;
                 foreach ($period_sanitized as $period=>$period_filename)
                 {
                     $period_data[$period] = [
-                        ['time'=>$this->gcCol('', self::T_TIME)],
+                        [$this->gcCol(self::FMT_TIMESTAMP)],
                     ];
                 }
                 foreach ($item as $metric_name=>$metric)
@@ -172,10 +204,10 @@ EOjs;
                         $type = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
                         foreach ($period_sanitized as $period=>$period_filename)
                         {
-                            $period_data[$period][0][$metric_name] = $this->gcCol($label, self::T_NUMERIC);
+                            $period_data[$period][0][$metric_name] = $this->gcCol(self::FMT_NUMERIC, $label);
                             foreach ($store->getMetricData($metric_name, $period, $type) as $time=>$value)
                             {
-                                $period_data[$period][$time][$metric_name] = $this->gcVal($value, self::T_NUMERIC);
+                                $period_data[$period][$time][$metric_name] = $this->gcVal($value, self::FMT_NUMERIC);
                             }
                         }
                     }
@@ -190,7 +222,7 @@ EOjs;
                         {
                             $r = [];
                             foreach ($cols as $c=>$c_label)
-                                $r[] = $c == 'time'
+                                $r[] = !$c
                                     ? $this->gcDateTime($bin_id)
                                     : (isset($row[$c]) ? $row[$c] : null);
                             $rows[] = $r;
@@ -211,7 +243,7 @@ EOjs;
                             Lib::sanitizeFilename($item_name),
                             $period_filename
                         ),
-                        json_encode($rows, JSON_PRETTY_PRINT)
+                        json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
                     );
                 }
             }
