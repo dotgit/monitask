@@ -161,7 +161,7 @@ EOjs;
                 foreach ($period_sanitized as $period=>$period_filename)
                 {
                     $period_data[$period] = [
-                        ['time'=>$this->gcCol($label, self::T_TIME)],
+                        ['time'=>$this->gcCol('', self::T_TIME)],
                     ];
                 }
                 foreach ($item as $metric_name=>$metric)
@@ -202,11 +202,7 @@ EOjs;
                         }
                     }
                     if (! $bin_id)
-                    {
-                        foreach ($cols as $c_label)
-                            $r[] = null;
-                        $rows[] = $r;
-                    }
+                        $rows[] = array_fill(0, count($cols), null);
                     file_put_contents(
                         sprintf(
                             '%s%s%s-%s.json',
