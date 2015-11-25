@@ -19,6 +19,7 @@ Class Export
     const METRIC_LABEL  = 'label';
     const METRIC_TYPE   = 'type';
     const METRIC_EVAL   = 'eval';
+    const METRIC_HIDDEN = 'hidden';
 
     public $error;
 

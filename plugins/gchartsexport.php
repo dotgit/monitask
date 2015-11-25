@@ -194,6 +194,8 @@ EOjs;
                 $metric_labels = [];
                 $metric_types = [];
                 $metric_evals = [];
+                $metric_hiddens = [];
+                $metric_visibles = [];
                 $period_bin_metric_values = [];
 
                 // pass 1: fill $period_bin_metric_values
@@ -204,6 +206,9 @@ EOjs;
                         $metric_labels[$metric_name] = Lib::arrayExtract($metric, self::METRIC_LABEL, $metric_name);
                         $metric_types[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
                         $metric_evals[$metric_name] = Lib::arrayExtract($metric, self::METRIC_EVAL);
+                        if (! Lib::arrayExtract($metric, self::METRIC_HIDDEN))
+                            $metric_visibles[$metric_name] = $metric_labels[$metric_name];
+
                         foreach ($period_sanitized as $period_name=>$period_filename)
                         {
                             foreach ($store->getMetricData($metric_name, $period_name, $metric_types[$metric_name]) as $bin_time=>$value)
@@ -219,7 +224,7 @@ EOjs;
 
                     // headings line
                     $r = [$this->gcCol(self::FMT_TIMESTAMP)];
-                    foreach ($metric_labels as $metric_name=>$label)
+                    foreach ($metric_visibles as $metric_name=>$label)
                         $r[] = $this->gcCol(self::FMT_NUMERIC, $label);
                     $rows[] = $r;
 
@@ -230,7 +235,7 @@ EOjs;
                         foreach ($period_bin_metric_values[$period_name] as $bin_time=>$metric_values)
                         {
                             $r = [$this->gcDateTime($bin_time)];
-                            foreach ($metric_labels as $metric_name=>$label)
+                            foreach ($metric_visibles as $metric_name=>$label)
                                 $r[] = isset($metric_evals[$metric_name])
                                     ? $this->gcVal(eval(str_replace(
                                         array_keys($metric_values),
@@ -245,7 +250,7 @@ EOjs;
                     }
                     if (count($rows) < 2)
                     {
-                        $rows[] = array_fill(0, count($metric_labels) + 1, null);
+                        $rows[] = array_fill(0, count($metric_visibles) + 1, null);
                     }
                     file_put_contents(
                         sprintf(
