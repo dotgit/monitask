@@ -18,7 +18,7 @@ Class Export
     // metric description
     const METRIC_LABEL  = 'label';
     const METRIC_TYPE   = 'type';
-    const METRIC_INVERT = 'invert';
+    const METRIC_EVAL   = 'eval';
 
     public $error;
 

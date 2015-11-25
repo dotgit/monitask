@@ -186,55 +186,67 @@ EOjs;
         $period_sanitized = [];
         foreach ($periods as $period_name=>$format)
             $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
+
         foreach ($items as $block=>$bk_items)
         {
             foreach ($bk_items as $item_name=>$item)
             {
-                foreach ($period_sanitized as $period=>$period_filename)
-                {
-                    $period_data[$period] = [
-                        [$this->gcCol(self::FMT_TIMESTAMP)],
-                    ];
-                }
+                $metric_labels = [];
+                $metric_types = [];
+                $metric_evals = [];
+                $period_bin_metric_values = [];
+
+                // pass 1: fill $period_bin_metric_values
                 foreach ($item as $metric_name=>$metric)
                 {
                     if (is_array($metric))
                     {
-                        $label = Lib::arrayExtract($metric, self::METRIC_LABEL, $metric_name);
-                        $type = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
-                        foreach ($period_sanitized as $period=>$period_filename)
+                        $metric_labels[$metric_name] = Lib::arrayExtract($metric, self::METRIC_LABEL, $metric_name);
+                        $metric_types[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
+                        $metric_evals[$metric_name] = Lib::arrayExtract($metric, self::METRIC_EVAL);
+                        foreach ($period_sanitized as $period_name=>$period_filename)
                         {
-                            $period_data[$period][0][$metric_name] = $this->gcCol(self::FMT_NUMERIC, $label);
-                            foreach ($store->getMetricData($metric_name, $period, $type) as $time=>$value)
-                            {
-                                $period_data[$period][$time][$metric_name] = $this->gcVal($value, self::FMT_NUMERIC);
-                            }
+                            foreach ($store->getMetricData($metric_name, $period_name, $metric_types[$metric_name]) as $bin_time=>$value)
+                                $period_bin_metric_values[$period_name][$bin_time][$metric_name] = $value;
                         }
                     }
                 }
-                foreach ($period_sanitized as $period=>$period_filename)
+
+                // pass 2: normalize and output item per period
+                foreach ($period_sanitized as $period_name=>$period_filename)
                 {
-                    ksort($period_data[$period]);
                     $rows = [];
-                    foreach ($period_data[$period] as $bin_id=>$row)
+
+                    // headings line
+                    $r = [$this->gcCol(self::FMT_TIMESTAMP)];
+                    foreach ($metric_labels as $metric_name=>$label)
+                        $r[] = $this->gcCol(self::FMT_NUMERIC, $label);
+                    $rows[] = $r;
+
+                    // bins
+                    if ($period_bin_metric_values)
                     {
-                        if ($bin_id)
+                        ksort($period_bin_metric_values[$period_name]);
+                        foreach ($period_bin_metric_values[$period_name] as $bin_time=>$metric_values)
                         {
-                            $r = [];
-                            foreach ($cols as $c=>$c_label)
-                                $r[] = !$c
-                                    ? $this->gcDateTime($bin_id)
-                                    : (isset($row[$c]) ? $row[$c] : null);
+                            $r = [$this->gcDateTime($bin_time)];
+                            foreach ($metric_labels as $metric_name=>$label)
+                                $r[] = isset($metric_evals[$metric_name])
+                                    ? $this->gcVal(eval(str_replace(
+                                        array_keys($metric_values),
+                                        array_values($metric_values),
+                                        "return ({$metric_evals[$metric_name]});"
+                                    )), self::FMT_NUMERIC)
+                                    : (isset($metric_values[$metric_name])
+                                        ? $this->gcVal($metric_values[$metric_name], self::FMT_NUMERIC)
+                                        : null);
                             $rows[] = $r;
                         }
-                        else
-                        {
-                            $cols = $row;
-                            $rows[] = array_values($cols);
-                        }
                     }
-                    if (! $bin_id)
-                        $rows[] = array_fill(0, count($cols), null);
+                    if (count($rows) < 2)
+                    {
+                        $rows[] = array_fill(0, count($metric_labels) + 1, null);
+                    }
                     file_put_contents(
                         sprintf(
                             '%s%s%s-%s.json',

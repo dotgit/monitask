@@ -43,7 +43,7 @@ Class TextExport extends Export
                         {
                             $m_labels[$metric_name] = Lib::arrayExtract($metric, self::METRIC_LABEL, $metric_name);
                             $m_types[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
-                            $m_inverts[$metric_name] = Lib::arrayExtract($metric, self::METRIC_INVERT);
+                            $m_evals[$metric_name] = Lib::arrayExtract($metric, self::METRIC_EVAL);
                             $label_len = max($label_len, mb_strlen($m_labels[$metric_name], Lib::CHARSET));
                         }
                     }
