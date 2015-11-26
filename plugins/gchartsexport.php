@@ -133,14 +133,14 @@ Class GChartsExport extends Export
                         unset($options[$opt_key]);
                     }
                 }
+                $options['title'] = "$title - $period_name";
 
-                $options += [
+                $options = array_replace_recursive($options, [
                     'fontName'=>'Roboto',
                     'fontSize'=>12,
                     'height'=>300,
-                    'title'=>"$title - $period_name",
                     'vAxis'=>['format'=>'short'],
-                ];
+                ]);
 
                 $metrics = [];
                 foreach ($item as $metric_name=>$metric)
