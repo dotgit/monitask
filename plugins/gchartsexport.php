@@ -153,10 +153,11 @@ Class GChartsExport extends Export
                                     eval("\$options['".str_replace(
                                         '.',
                                         "']['",
-                                        addslashes(str_replace('series.', 'series.'.$i++.'.', $d_key)
+                                        addslashes(str_replace('series.', "series.$i.", $d_key)
                                     ))."']=\$d_value;");
                                 }
                             }
+                            $i++;
                         }
                     }
                 }
