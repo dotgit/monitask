@@ -106,10 +106,12 @@ Class GChartsExport extends Export
         foreach ($periods as $period_name=>$format)
             $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
         $packages = [];
+        $toc = [];
         $blocks = [];
         $charts = [];
         foreach ($items as $block=>$bk_items)
         {
+            $bk_toc = [];
             $bk_charts = [];
             foreach ($bk_items as $item_name=>$item)
             {
@@ -131,7 +133,6 @@ Class GChartsExport extends Export
                 }
 
                 $options = array_replace_recursive($options, [
-                    'fontName'=>'Roboto',
                     'fontSize'=>12,
                     'height'=>300,
                     'vAxis'=>['format'=>'short'],
@@ -161,7 +162,18 @@ Class GChartsExport extends Export
                         }
                     }
                 }
-                $bk_charts[] = '<h3>'.htmlspecialchars($title, null, Lib::CHARSET).'</h3>';
+                $bk_toc[] = sprintf(
+                    '<li><a href="#ref_%s">%s</a></li>%s',
+                    Lib::sanitizeFilename($title),
+                    htmlspecialchars($title),
+                    PHP_EOL
+                );
+                $bk_charts[] = sprintf(
+                    '<h3 id="ref_%s">%s</h3>%s',
+                    Lib::sanitizeFilename($title),
+                    htmlspecialchars($title),
+                    PHP_EOL
+                );
                 foreach ($period_sanitized as $period_name=>$period_file)
                 {
                     $options['title'] = "$title - $period_name";
@@ -172,45 +184,88 @@ Class GChartsExport extends Export
                         "containerId"=>$id,
                         "chartType"=>$class,
                         'options'=>$options,
-                    ], JSON_UNESCAPED_UNICODE).");getJsonDraw('$id');";
+                    ], JSON_UNESCAPED_UNICODE).");";
                 }
             }
-            $blocks[] =
-                '<h2>'.htmlspecialchars($block, null, Lib::CHARSET).'</h2>'.PHP_EOL.
-                implode(PHP_EOL, $bk_charts);
+            $toc[] = sprintf(
+                '<li><a href="#ref_%s">%s</a><ul>%s</ul></li>',
+                Lib::sanitizeFilename($block),
+                htmlspecialchars($block),
+                implode(PHP_EOL, $bk_toc)
+            );
+            $blocks[] = sprintf(
+                '<h2 id="ref_%s">%s</h2>%s%s',
+                Lib::sanitizeFilename($block),
+                htmlspecialchars($block),
+                PHP_EOL,
+                implode(PHP_EOL, $bk_charts)
+            );
         }
         $charts_js = implode(PHP_EOL, $charts);
         $packages_js = json_encode(['packages'=>array_keys($packages)]);
-        $time_id = 'last-update';
 
         // vars for template
-        $Hostname = htmlspecialchars(rtrim(`hostname`), null, Lib::CHARSET);
+        $Time_id = 'last-update';
+        $Hostname = htmlspecialchars(rtrim(`hostname`));
+        $toc_html = '<ul class="list-unstyled">'.implode(PHP_EOL, $toc).'</ul>';
+        $blocks_html = implode(PHP_EOL, $blocks);
         $Html_container =
-            "<h1 class=\"page-header\">$Hostname <small id=\"$time_id\"></small></h1>".
-            implode(PHP_EOL, $blocks);
+<<<EOhtml
+<div class="row">
+  <div class="col-sm-2 col-sm-push-10">
+    $toc_html
+  </div>
+  <div class="col-sm-10 col-sm-pull-2">
+    $blocks_html
+  </div>
+</div>
+EOhtml;
         $Js_footer =
 <<<EOjs
 google.load('visualization', '1', {packages:['corechart']});
 google.setOnLoadCallback(drawChart);
 var GCharts = {};
+function loadJson(url,fn){
+    var XHR = new XMLHttpRequest();
+    XHR.onreadystatechange=function(){
+        if(XHR.readyState==XMLHttpRequest.DONE && XHR.status==200)
+            fn(JSON.parse(XHR.responseText));
+    }
+    XHR.open('POST',url);
+    XHR.send();
+}
 function redraw(id){
     for(var i in GCharts)
+        GCharts[i].draw();
+}
+function update(id){
+    for(var i in GCharts)
         getJsonDraw(i);
-    $('#$time_id').text(new Date().toString());
 }
 function getJsonDraw(id){
-    $.ajax({
-        url:id+'.json',
-        success:function(data){
+    loadJson(
+        id+'.json',
+        function(data){
             GCharts[id].setDataTable(data);
             GCharts[id].draw();
-        },
-        dataType:"json"
-    });
+            document.getElementById('$Time_id').innerHTML = new Date().toLocaleString();
+        }
+    );
 }
 function drawChart(){
 $charts_js
+update();
 }
+window.onresize = function(){
+    if(typeof ResizeInProgress==='undefined'){
+        ResizeInProgress=true;
+        window.setTimeout(function(){
+            ResizeInProgress=undefined;
+            redraw();
+        },1000);
+    }
+};
+
 EOjs;
 
         include 'plugins/gchartstemplate.php';
