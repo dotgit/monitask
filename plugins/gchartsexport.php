@@ -15,9 +15,7 @@ Class GChartsExport extends Export
     // item directives
     const VAR_CLASS         = 'class';
     const VAR_BASE          = 'base';
-    const VAR_MAX_VALUE     = 'max_value';
     const VAR_CRIT_VALUE    = 'critical_value';
-    const VAR_LOWER_LIMIT   = 'lower_limit';
 
     // types of values
     const FMT_NUMERIC   = 'n';
@@ -119,9 +117,7 @@ Class GChartsExport extends Export
                 $title = Lib::arrayExtract($item, self::VAR_TITLE, $item_name);
                 $options = Lib::arrayExtract($item, self::VAR_OPTIONS, []);
                 $base = Lib::arrayExtract($item, self::VAR_BASE);
-                $max_value = Lib::arrayExtract($item, self::VAR_MAX_VALUE);
                 $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
-                $lower_limit = Lib::arrayExtract($item, self::VAR_LOWER_LIMIT);
 
                 if (! is_array($options))
                     $options = [];
@@ -142,11 +138,21 @@ Class GChartsExport extends Export
                 ]);
 
                 $metrics = [];
+                $i = 0;
                 foreach ($item as $metric_name=>$metric)
                 {
                     if (is_array($metric))
                     {
                         $metrics[$metric_name] = true;
+                        if (! Lib::arrayExtract($metric, self::METRIC_HIDDEN))
+                            $metric_series[$metric_name] = $i++;
+                        foreach ($metric as $d_key=>$d_value)
+                        {
+                            if (strpos($d_key, 'series.') === 0)
+                            {
+                                eval("\$options['".str_replace('.', "']['", addslashes(str_replace('series.', "series.$i.", $d_key)))."']=\$d_value;");
+                            }
+                        }
                     }
                 }
                 $bk_charts[] = '<h3>'.htmlspecialchars($title, null, Lib::CHARSET).'</h3>';
