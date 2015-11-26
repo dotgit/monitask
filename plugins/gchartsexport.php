@@ -133,7 +133,6 @@ Class GChartsExport extends Export
                         unset($options[$opt_key]);
                     }
                 }
-                $options['title'] = "$title - $period_name";
 
                 $options = array_replace_recursive($options, [
                     'fontName'=>'Roboto',
@@ -153,6 +152,7 @@ Class GChartsExport extends Export
                 $bk_charts[] = '<h3>'.htmlspecialchars($title, null, Lib::CHARSET).'</h3>';
                 foreach ($period_sanitized as $period_name=>$period_file)
                 {
+                    $options['title'] = "$title - $period_name";
                     $id = "$item_name-$period_file";
                     $bk_charts[] = "<div id=\"$id\"></div>";
                     $packages[strtolower($class)] = true;
