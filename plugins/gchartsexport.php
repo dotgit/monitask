@@ -144,8 +144,6 @@ Class GChartsExport extends Export
                     if (is_array($metric))
                     {
                         $metrics[$metric_name] = true;
-                        if (! Lib::arrayExtract($metric, self::METRIC_HIDDEN))
-                            $i++;
                         foreach ($metric as $d_key=>$d_value)
                         {
                             if (strpos($d_key, 'series.') === 0)
@@ -157,6 +155,8 @@ Class GChartsExport extends Export
                                 ))."']=\$d_value;");
                             }
                         }
+                        if (! Lib::arrayExtract($metric, self::METRIC_HIDDEN))
+                            $i++;
                     }
                 }
                 $bk_charts[] = '<h3>'.htmlspecialchars($title, null, Lib::CHARSET).'</h3>';
