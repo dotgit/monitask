@@ -144,19 +144,20 @@ Class GChartsExport extends Export
                     if (is_array($metric))
                     {
                         $metrics[$metric_name] = true;
-                        foreach ($metric as $d_key=>$d_value)
+                        if (! Lib::arrayExtract($metric, self::METRIC_HIDDEN))
                         {
-                            if (strpos($d_key, 'series.') === 0)
+                            foreach ($metric as $d_key=>$d_value)
                             {
-                                eval("\$options['".str_replace(
-                                    '.',
-                                    "']['",
-                                    addslashes(str_replace('series.', "series.$i.", $d_key)
-                                ))."']=\$d_value;");
+                                if (strpos($d_key, 'series.') === 0)
+                                {
+                                    eval("\$options['".str_replace(
+                                        '.',
+                                        "']['",
+                                        addslashes(str_replace('series.', 'series.'.$i++.'.', $d_key)
+                                    ))."']=\$d_value;");
+                                }
                             }
                         }
-                        if (! Lib::arrayExtract($metric, self::METRIC_HIDDEN))
-                            $i++;
                     }
                 }
                 $bk_charts[] = '<h3>'.htmlspecialchars($title, null, Lib::CHARSET).'</h3>';
