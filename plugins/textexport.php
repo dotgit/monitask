@@ -27,35 +27,31 @@ Class TextExport extends Export
 
                 foreach ($bk_items as $item_name=>$item)
                 {
-                    $label = Lib::arrayExtract($item, self::VAR_LABEL, $item_name);
-                    $vert_label = Lib::arrayExtract($item, self::VAR_VERT_LABEL);
-                    $base = Lib::arrayExtract($item, self::VAR_BASE);
-                    $max_value = Lib::arrayExtract($item, self::VAR_MAX_VALUE);
-                    $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
-                    $lower_limit = Lib::arrayExtract($item, self::VAR_LOWER_LIMIT);
+                    $title = Lib::arrayExtract($item, self::VAR_TITLE, $item_name);
+                    $options = Lib::arrayExtract($item, self::VAR_OPTIONS);
 
-                    $label_len = 0;
-                    $m_labels = [];
+                    $title_len = 0;
+                    $m_titles = [];
                     $m_types = [];
                     foreach ($item as $metric_name=>$metric)
                     {
                         if (is_array($metric))
                         {
-                            $m_labels[$metric_name] = Lib::arrayExtract($metric, self::METRIC_LABEL, $metric_name);
+                            $m_titles[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TITLE, $metric_name);
                             $m_types[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
                             $m_evals[$metric_name] = Lib::arrayExtract($metric, self::METRIC_EVAL);
-                            $label_len = max($label_len, mb_strlen($m_labels[$metric_name], Lib::CHARSET));
+                            $title_len = max($title_len, mb_strlen($m_titles[$metric_name], Lib::CHARSET));
                         }
                     }
-                    ++$label_len;
+                    ++$title_len;
 
-                    echo str_repeat('-', $label_len + 5*7),PHP_EOL;
+                    echo str_repeat('-', $title_len + 5*7),PHP_EOL;
 
                     foreach ($periods as $period=>$format)
                     {
-                        echo $label, ' - ', $period, PHP_EOL;
+                        echo $title, ' - ', $period, PHP_EOL;
                         printf(
-                            "%-{$label_len}s %6s %6s %6s %6s %6s%s",
+                            "%-{$title_len}s %6s %6s %6s %6s %6s%s",
                             '',
                             'first',
                             'min',
@@ -64,12 +60,12 @@ Class TextExport extends Export
                             'last',
                             PHP_EOL
                         );
-                        foreach ($m_labels as $metric_name=>$m_label)
+                        foreach ($m_titles as $metric_name=>$m_title)
                         {
                             $stats = $store->getMetricStats($metric_name, $period, $m_types[$metric_name]);
                             printf(
-                                "%-{$label_len}s %6s %6s %6s %6s %6s%s",
-                                $m_label,
+                                "%-{$title_len}s %6s %6s %6s %6s %6s%s",
+                                $m_title,
                                 Lib::humanFloat($stats[Store::STAT_FIRST]),
                                 Lib::humanFloat($stats[Store::STAT_MIN]),
                                 Lib::humanFloat($stats[Store::STAT_AVG]),

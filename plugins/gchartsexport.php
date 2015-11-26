@@ -12,6 +12,13 @@ Class GChartsExport extends Export
     // export section of ini file
     const VAR_EXPORT_DIR    = 'export_dir';
 
+    // item directives
+    const VAR_CLASS         = 'class';
+    const VAR_BASE          = 'base';
+    const VAR_MAX_VALUE     = 'max_value';
+    const VAR_CRIT_VALUE    = 'critical_value';
+    const VAR_LOWER_LIMIT   = 'lower_limit';
+
     // types of values
     const FMT_NUMERIC   = 'n';
     const FMT_PCT       = 'p';
@@ -46,9 +53,7 @@ Class GChartsExport extends Export
 
     public function __construct($params)
     {
-        if (empty($params[self::VAR_EXPORT_DIR]) or ! is_dir($params[self::VAR_EXPORT_DIR]))
-            $this->error = __METHOD__.': '.self::VAR_EXPORT_DIR.' parameter not set or is not a directory';
-        else
+        if (isset($params[self::VAR_EXPORT_DIR]) and is_dir($params[self::VAR_EXPORT_DIR]))
             $this->export_dir = realpath($params[self::VAR_EXPORT_DIR]);
     }
 
@@ -110,12 +115,32 @@ Class GChartsExport extends Export
             $bk_charts = [];
             foreach ($bk_items as $item_name=>$item)
             {
-                $label = Lib::arrayExtract($item, self::VAR_LABEL, $item_name);
-                $vert_label = Lib::arrayExtract($item, self::VAR_VERT_LABEL);
+                $class = Lib::arrayExtract($item, self::VAR_CLASS, 'AreaChart');
+                $title = Lib::arrayExtract($item, self::VAR_TITLE, $item_name);
+                $options = Lib::arrayExtract($item, self::VAR_OPTIONS, []);
                 $base = Lib::arrayExtract($item, self::VAR_BASE);
                 $max_value = Lib::arrayExtract($item, self::VAR_MAX_VALUE);
                 $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
                 $lower_limit = Lib::arrayExtract($item, self::VAR_LOWER_LIMIT);
+
+                if (! is_array($options))
+                    $options = [];
+                foreach ($options as $opt_key=>$opt_value)
+                {
+                    if (strpos($opt_key, '.'))
+                    {
+                        eval("\$options['".str_replace('.', "']['", addslashes($opt_key))."']=\$opt_value;");
+                        unset($options[$opt_key]);
+                    }
+                }
+
+                $options += [
+                    'fontName'=>'Roboto',
+                    'fontSize'=>12,
+                    'height'=>300,
+                    'title'=>"$title - $period_name",
+                    'vAxis'=>['format'=>'short'],
+                ];
 
                 $metrics = [];
                 foreach ($item as $metric_name=>$metric)
@@ -125,24 +150,17 @@ Class GChartsExport extends Export
                         $metrics[$metric_name] = true;
                     }
                 }
-                $bk_charts[] = '<h3>'.htmlspecialchars($label, null, Lib::CHARSET).'</h3>';
-                foreach ($period_sanitized as $period_file)
+                $bk_charts[] = '<h3>'.htmlspecialchars($title, null, Lib::CHARSET).'</h3>';
+                foreach ($period_sanitized as $period_name=>$period_file)
                 {
                     $id = "$item_name-$period_file";
-                    $chart_type = 'AreaChart';
                     $bk_charts[] = "<div id=\"$id\"></div>";
-                    $packages[strtolower($chart_type)] = true;
-                    $charts[] = "getJsonDraw('$id.json',".json_encode([
+                    $packages[strtolower($class)] = true;
+                    $charts[] = "GCharts['$id']=new google.visualization.ChartWrapper(".json_encode([
                         "containerId"=>$id,
-                        "chartType"=>$chart_type,
-                        'options'=>[
-                            'fontName'=>'Roboto',
-                            'fontSize'=>12,
-                            'height'=>300,
-                            'isStacked'=>true,
-                            'vAxis'=>['format'=>'short'],
-                        ],
-                    ], JSON_UNESCAPED_UNICODE).');';
+                        "chartType"=>$class,
+                        'options'=>$options,
+                    ], JSON_UNESCAPED_UNICODE).");getJsonDraw('$id');";
                 }
             }
             $blocks[] =
@@ -151,22 +169,29 @@ Class GChartsExport extends Export
         }
         $charts_js = implode(PHP_EOL, $charts);
         $packages_js = json_encode(['packages'=>array_keys($packages)]);
+        $time_id = 'last-update';
 
         // vars for template
         $Hostname = htmlspecialchars(rtrim(`hostname`), null, Lib::CHARSET);
         $Html_container =
-            "<h1 class=\"page-header\">$Hostname</h1>".
+            "<h1 class=\"page-header\">$Hostname <small id=\"$time_id\"></small></h1>".
             implode(PHP_EOL, $blocks);
         $Js_footer =
 <<<EOjs
 google.load('visualization', '1', {packages:['corechart']});
 google.setOnLoadCallback(drawChart);
-function getJsonDraw(url,chart){
+var GCharts = {};
+function redraw(id){
+    for(var i in GCharts)
+        getJsonDraw(i);
+    $('#$time_id').text(new Date().toString());
+}
+function getJsonDraw(id){
     $.ajax({
-        url:url,
+        url:id+'.json',
         success:function(data){
-            chart['dataTable'] = data;
-            google.visualization.drawChart(chart);
+            GCharts[id].setDataTable(data);
+            GCharts[id].draw();
         },
         dataType:"json"
     });
@@ -183,6 +208,11 @@ EOjs;
 
     public function export(array $items, array $periods, Store $store)
     {
+        if (empty($this->export_dir))
+        {
+            $this->error = __METHOD__.': '.self::VAR_EXPORT_DIR.' parameter not set or is not a directory';
+            return false;
+        }
         $period_sanitized = [];
         foreach ($periods as $period_name=>$format)
             $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
@@ -191,7 +221,11 @@ EOjs;
         {
             foreach ($bk_items as $item_name=>$item)
             {
-                $metric_labels = [];
+                $class = Lib::arrayExtract($item, self::VAR_CLASS, 'AreaChart');
+                $title = Lib::arrayExtract($item, self::VAR_TITLE, $item_name);
+                $options = Lib::arrayExtract($item, self::VAR_OPTIONS, []);
+
+                $metric_titles = [];
                 $metric_types = [];
                 $metric_evals = [];
                 $metric_hiddens = [];
@@ -203,11 +237,11 @@ EOjs;
                 {
                     if (is_array($metric))
                     {
-                        $metric_labels[$metric_name] = Lib::arrayExtract($metric, self::METRIC_LABEL, $metric_name);
+                        $metric_titles[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TITLE, $metric_name);
                         $metric_types[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
                         $metric_evals[$metric_name] = Lib::arrayExtract($metric, self::METRIC_EVAL);
                         if (! Lib::arrayExtract($metric, self::METRIC_HIDDEN))
-                            $metric_visibles[$metric_name] = $metric_labels[$metric_name];
+                            $metric_visibles[$metric_name] = $metric_titles[$metric_name];
 
                         foreach ($period_sanitized as $period_name=>$period_filename)
                         {
@@ -234,17 +268,26 @@ EOjs;
                         ksort($period_bin_metric_values[$period_name]);
                         foreach ($period_bin_metric_values[$period_name] as $bin_time=>$metric_values)
                         {
+                            $metric_parsed = [];
                             $r = [$this->gcDateTime($bin_time)];
                             foreach ($metric_visibles as $metric_name=>$label)
-                                $r[] = isset($metric_evals[$metric_name])
-                                    ? $this->gcVal(eval(str_replace(
-                                        array_keys($metric_values),
-                                        array_values($metric_values),
+                            {
+                                if (isset($metric_evals[$metric_name]))
+                                {
+                                    if (empty($metric_parsed))
+                                        foreach ($metric_values as $m_name=>$value)
+                                            $metric_parsed[$m_name] = isset($value) ? "($value)" : 'null';
+                                    $r[] = $this->gcVal(eval(str_replace(
+                                        array_keys($metric_parsed),
+                                        array_values($metric_parsed),
                                         "return ({$metric_evals[$metric_name]});"
-                                    )), self::FMT_NUMERIC)
-                                    : (isset($metric_values[$metric_name])
+                                    )), self::FMT_NUMERIC);
+                                }
+                                else
+                                    $r[] = isset($metric_values[$metric_name])
                                         ? $this->gcVal($metric_values[$metric_name], self::FMT_NUMERIC)
-                                        : null);
+                                        : null;
+                            }
                             $rows[] = $r;
                         }
                     }
