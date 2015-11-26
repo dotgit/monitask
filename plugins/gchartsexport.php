@@ -145,12 +145,16 @@ Class GChartsExport extends Export
                     {
                         $metrics[$metric_name] = true;
                         if (! Lib::arrayExtract($metric, self::METRIC_HIDDEN))
-                            $metric_series[$metric_name] = $i++;
+                            $i++;
                         foreach ($metric as $d_key=>$d_value)
                         {
                             if (strpos($d_key, 'series.') === 0)
                             {
-                                eval("\$options['".str_replace('.', "']['", addslashes(str_replace('series.', "series.$i.", $d_key)))."']=\$d_value;");
+                                eval("\$options['".str_replace(
+                                    '.',
+                                    "']['",
+                                    addslashes(str_replace('series.', "series.$i.", $d_key)
+                                ))."']=\$d_value;");
                             }
                         }
                     }
