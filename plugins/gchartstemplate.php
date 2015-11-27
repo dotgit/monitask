@@ -13,10 +13,11 @@ body{padding-top:70px;background-color:#f8f8f8;}
 <nav class="navbar navbar-inverse navbar-fixed-top">
   <div class="container">
     <div class="pull-right">
-      <span class="navbar-text"><span class="hidden-xs">Updated:</span> <span id="<?=$Time_id?>"></span></span>&nbsp;
+      <span class="navbar-text hidden-xs"><span class="hidden-xs hidden-sm">Updated:</span> <span id="<?=$Time_id?>"></span></span>&nbsp;
       <button href="#" class="navbar-btn btn btn-default" onclick="update()">
         <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
         <span class="hidden-xs">Refresh</span>
+        <span class="visible-xs-inline" id="<?=$Refresh_id?>"></span>
       </button>
     </div>
     <div class="navbar-header">

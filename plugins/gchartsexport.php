@@ -216,6 +216,7 @@ Class GChartsExport extends Export
 
         // vars for template
         $Time_id = 'last-update';
+        $Refresh_id = 'refresh';
         $Hostname = htmlspecialchars(rtrim(`hostname`));
         $toc_html = implode(PHP_EOL, $toc);
         $blocks_html = implode(PHP_EOL, $blocks);
@@ -258,13 +259,17 @@ function update(id){
     for(var i in GCharts)
         getJsonDraw(i);
 }
+function updateTime(){var d=new Date();
+    document.getElementById('$Time_id').innerHTML = d.toLocaleString();
+    document.getElementById('$Refresh_id').innerHTML = d.toTimeString().replace(/^(\d+\D\d+).+/,'$1');
+}
 function getJsonDraw(id){
     loadJson(
         id+'.json',
         function(data){
             GCharts[id].setDataTable(data);
             GCharts[id].draw();
-            document.getElementById('$Time_id').innerHTML = new Date().toLocaleString();
+            updateTime();
         }
     );
 }
