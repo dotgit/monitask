@@ -137,6 +137,7 @@ Class GChartsExport extends Export
                 }
 
                 $options = array_replace_recursive($options, [
+                    'backgroundColor'=>'none',
                     'fontSize'=>12,
                     'height'=>300,
                     'vAxis'=>['format'=>'short'],
@@ -235,7 +236,7 @@ google.load('visualization', '1', {packages:['corechart']});
 google.setOnLoadCallback(drawChart);
 var GCharts = {};
 function loadJson(url,fn){
-    var XHR = new XMLHttpRequest();
+    var XHR=new XMLHttpRequest();
     XHR.onreadystatechange=function(){
         if(XHR.readyState==XMLHttpRequest.DONE && XHR.status==200)
             fn(JSON.parse(XHR.responseText));

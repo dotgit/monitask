@@ -6,10 +6,11 @@
 <title><?=$Hostname?> - Monitask</title>
 <link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 <style>
+body{padding-top:70px;background-color:#eee;}
 </style>
 <body>
 
-<nav class="navbar navbar-default">
+<nav class="navbar navbar-inverse navbar-fixed-top">
   <div class="container">
     <div class="navbar-header">
       <div class="navbar-brand"><?=$Hostname?></div>
