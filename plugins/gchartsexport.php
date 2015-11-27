@@ -168,7 +168,7 @@ Class GChartsExport extends Export
                     }
                 }
                 $bk_toc[] = sprintf(
-                    '<li><a href="#ref_%s">%s</a></li>%s',
+                    '<a class="list-group-item" href="#ref_%s">%s</a>%s',
                     Lib::sanitizeFilename($title),
                     htmlspecialchars($title),
                     PHP_EOL
@@ -198,7 +198,7 @@ Class GChartsExport extends Export
                 $bk_charts[] = '</div>';
             }
             $toc[] = sprintf(
-                '<li><a href="#ref_%s">%s</a><ul>%s</ul></li>',
+                '<ul class="list-group"><a class="list-group-item" href="#ref_%s"><b>%s</b></a>%s</ul>',
                 Lib::sanitizeFilename($block),
                 htmlspecialchars($block),
                 implode(PHP_EOL, $bk_toc)
@@ -217,15 +217,15 @@ Class GChartsExport extends Export
         // vars for template
         $Time_id = 'last-update';
         $Hostname = htmlspecialchars(rtrim(`hostname`));
-        $toc_html = '<ul class="list-unstyled">'.implode(PHP_EOL, $toc).'</ul>';
+        $toc_html = implode(PHP_EOL, $toc);
         $blocks_html = implode(PHP_EOL, $blocks);
         $Html_container =
 <<<EOhtml
 <div class="row">
-  <div class="col-sm-2 col-sm-push-10">
+  <div class="col-sm-3 col-sm-push-9 col-lg-2 col-lg-push-10">
     $toc_html
   </div>
-  <div class="col-sm-10 col-sm-pull-2">
+  <div class="col-sm-9 col-sm-pull-3 col-lg-10 col-lg-pull-2">
     $blocks_html
   </div>
 </div>
