@@ -105,10 +105,12 @@ Class GChartsExport extends Export
         $period_sanitized = [];
         foreach ($periods as $period_name=>$format)
             $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
+        list($first_period) = array_keys($periods);
         $packages = [];
         $toc = [];
         $blocks = [];
         $charts = [];
+        $collapse_class = 'collapse';
         foreach ($items as $block=>$bk_items)
         {
             $bk_toc = [];
@@ -120,6 +122,8 @@ Class GChartsExport extends Export
                 $options = Lib::arrayExtract($item, self::VAR_OPTIONS, []);
                 $base = Lib::arrayExtract($item, self::VAR_BASE);
                 $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
+
+                $item_clean = Lib::sanitizeFilename($item_name);
 
                 if (! is_array($options))
                     $options = [];
@@ -169,16 +173,20 @@ Class GChartsExport extends Export
                     PHP_EOL
                 );
                 $bk_charts[] = sprintf(
-                    '<h3 id="ref_%s">%s</h3>%s',
+                    '<h2 id="ref_%s">%s<button class="pull-right btn btn-sm btn-default" onclick="toggleMore(this,\'%s\')">%s</button></h2>%s',
                     Lib::sanitizeFilename($title),
                     htmlspecialchars($title),
+                    $item_clean,
+                    'More...',
                     PHP_EOL
                 );
                 foreach ($period_sanitized as $period_name=>$period_file)
                 {
                     $options['title'] = "$title - $period_name";
-                    $id = "$item_name-$period_file";
+                    $id = "$item_clean-$period_file";
                     $bk_charts[] = "<div id=\"$id\"></div>";
+                    if ($period_name == $first_period)
+                        $bk_charts[] = "<div class=\"$collapse_class $item_clean\">";
                     $packages[strtolower($class)] = true;
                     $charts[] = "GCharts['$id']=new google.visualization.ChartWrapper(".json_encode([
                         "containerId"=>$id,
@@ -186,6 +194,7 @@ Class GChartsExport extends Export
                         'options'=>$options,
                     ], JSON_UNESCAPED_UNICODE).");";
                 }
+                $bk_charts[] = '</div>';
             }
             $toc[] = sprintf(
                 '<li><a href="#ref_%s">%s</a><ul>%s</ul></li>',
@@ -194,7 +203,7 @@ Class GChartsExport extends Export
                 implode(PHP_EOL, $bk_toc)
             );
             $blocks[] = sprintf(
-                '<h2 id="ref_%s">%s</h2>%s%s',
+                '<h1 class="page-header" id="ref_%s">%s</h1>%s%s',
                 Lib::sanitizeFilename($block),
                 htmlspecialchars($block),
                 PHP_EOL,
@@ -234,9 +243,15 @@ function loadJson(url,fn){
     XHR.open('POST',url);
     XHR.send();
 }
-function redraw(id){
-    for(var i in GCharts)
-        GCharts[i].draw();
+function redraw(name){
+    if(name===undefined){
+        for(var i in GCharts)
+            GCharts[i].draw();
+    }else{
+        for(var i in GCharts)
+            if(i.match('^'+name))
+                GCharts[i].draw();
+    }
 }
 function update(id){
     for(var i in GCharts)
@@ -251,6 +266,17 @@ function getJsonDraw(id){
             document.getElementById('$Time_id').innerHTML = new Date().toLocaleString();
         }
     );
+}
+function toggleMore(el,cl){
+    var div=document.getElementsByClassName(cl)[0];
+    if(/ in\$/.test(div.className)){
+        div.className=div.className.replace(/ in\$/,'');
+        el.innerHTML='More...';
+    }else{
+        div.className+=' in';
+        el.innerHTML='Less...';
+        redraw(cl);
+    }
 }
 function drawChart(){
 $charts_js
