@@ -292,6 +292,7 @@ window.onresize = function(){
         },1000);
     }
 };
+window.setInterval(update,3600000);
 
 EOjs;
 
