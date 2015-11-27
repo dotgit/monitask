@@ -6,7 +6,7 @@
 <title><?=$Hostname?> - Monitask</title>
 <link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 <style>
-body{padding-top:70px;background-color:#eee;}
+body{padding-top:70px;background-color:#f8f8f8;}
 </style>
 <body>
 

@@ -174,7 +174,7 @@ Class GChartsExport extends Export
                     PHP_EOL
                 );
                 $bk_charts[] = sprintf(
-                    '<h2 id="ref_%s">%s<button class="pull-right btn btn-sm btn-default" onclick="toggleMore(this,\'%s\')">%s</button></h2>%s',
+                    '<p class="lead" id="ref_%s">%s<button class="pull-right btn btn-sm btn-default" onclick="toggleMore(this,\'%s\')">%s</button></p>%s',
                     Lib::sanitizeFilename($title),
                     htmlspecialchars($title),
                     $item_clean,
@@ -204,7 +204,7 @@ Class GChartsExport extends Export
                 implode(PHP_EOL, $bk_toc)
             );
             $blocks[] = sprintf(
-                '<h1 class="page-header" id="ref_%s">%s</h1>%s%s',
+                '<h3 class="page-header" id="ref_%s">%s</h3>%s%s',
                 Lib::sanitizeFilename($block),
                 htmlspecialchars($block),
                 PHP_EOL,
