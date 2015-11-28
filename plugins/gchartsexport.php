@@ -47,6 +47,9 @@ Class GChartsExport extends Export
     const GC_C_R_DOMAIN             = 'domain';
     const GC_C_R_DATA               = 'data';
 
+    const JSON_DATA     = 'data';
+    const JSON_STATS    = 'stats';
+
 	public $export_dir;
 
     public function __construct($params)
@@ -215,8 +218,6 @@ Class GChartsExport extends Export
         $packages_js = json_encode(['packages'=>array_keys($packages)]);
 
         // vars for template
-        $Time_id = 'last-update';
-        $Refresh_id = 'refresh';
         $Hostname = htmlspecialchars(rtrim(`hostname`));
         $toc_html = implode(PHP_EOL, $toc);
         $blocks_html = implode(PHP_EOL, $blocks);
@@ -231,6 +232,10 @@ Class GChartsExport extends Export
   </div>
 </div>
 EOhtml;
+        $Time_id = 'last-update';
+        $Refresh_id = 'refresh';
+        $json_data = self::JSON_DATA;
+        $json_stats = self::JSON_STATS;
         $Js_footer =
 <<<EOjs
 google.load('visualization', '1', {packages:['corechart']});
@@ -267,7 +272,7 @@ function getJsonDraw(id){
     loadJson(
         id+'.json',
         function(data){
-            GCharts[id].setDataTable(data);
+            GCharts[id].setDataTable(data.$json_data);
             GCharts[id].draw();
             updateTime();
         }
@@ -403,7 +408,7 @@ EOjs;
                             Lib::sanitizeFilename($item_name),
                             $period_filename
                         ),
-                        json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                        json_encode([self::JSON_DATA=>$rows, self::JSON_STATS=>[]], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
                     );
                 }
             }
