@@ -296,7 +296,8 @@ function updateStats(id,st,upd){
     d=document.createElement('td');
     r.appendChild(d);
     d=document.createElement('td');
-    d.appendChild(document.createTextNode(upd));
+    if(upd!==null)
+        d.appendChild(document.createTextNode(upd));
     d.setAttribute('colspan',Stats.length);
     r.appendChild(d);
     F.appendChild(r);

@@ -92,13 +92,19 @@ Class Lib
                     : \round($amount/1000, 2)
                 )
             ).'K';
-        else
+        elseif ($amount_abs >= 1)
             return $amount_abs >= 100
                 ? \round($amount)
                 : ($amount_abs >= 10
                     ? \round($amount, 1)
                     : \round($amount, 2)
                 );
+        elseif ($amount_abs >= 0.001)
+            return \strlen($t = \round($amount_abs, 3)) < 5
+                ? \round($amount, 3)
+                : \str_replace('0.', '.', \round($amount, 3));
+        else
+            return 0;
     }
 
 }
