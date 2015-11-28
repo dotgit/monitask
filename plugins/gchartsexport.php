@@ -49,6 +49,7 @@ Class GChartsExport extends Export
 
     const JSON_DATA     = 'data';
     const JSON_STATS    = 'stats';
+    const JSON_UPDATE   = 'update';
 
 	public $export_dir;
 
@@ -188,7 +189,7 @@ Class GChartsExport extends Export
                 {
                     $options['title'] = "$title - $period_name";
                     $id = "$item_clean-$period_file";
-                    $bk_charts[] = "<div id=\"$id\"></div>";
+                    $bk_charts[] = "<div id=\"$id\"></div><div id=\"stats_$id\"></div>";
                     if ($period_name == $first_period)
                         $bk_charts[] = "<div class=\"$collapse_class $item_clean\">";
                     $packages[strtolower($class)] = true;
@@ -232,15 +233,15 @@ Class GChartsExport extends Export
   </div>
 </div>
 EOhtml;
-        $Time_id = 'last-update';
-        $Refresh_id = 'refresh';
         $json_data = self::JSON_DATA;
         $json_stats = self::JSON_STATS;
+        $json_update = self::JSON_UPDATE;
         $Js_footer =
 <<<EOjs
 google.load('visualization', '1', {packages:['corechart']});
 google.setOnLoadCallback(drawChart);
-var GCharts = {};
+var GCharts={};
+var Stats=["metric","first","min","avg","max","last"];
 function loadJson(url,fn){
     var XHR=new XMLHttpRequest();
     XHR.onreadystatechange=function(){
@@ -264,9 +265,45 @@ function update(id){
     for(var i in GCharts)
         getJsonDraw(i);
 }
-function updateTime(){var d=new Date();
-    document.getElementById('$Time_id').innerHTML = d.toLocaleString();
-    document.getElementById('$Refresh_id').innerHTML = d.toTimeString().replace(/^(\d+\D\d+).+/,'$1');
+function updateStats(id,st,upd){
+    var div=document.getElementById('stats_'+id);
+    var t=document.createElement('table');
+    var H=document.createElement('thead');
+    var B=document.createElement('tbody');
+    var F=document.createElement('tfoot');
+    var r=document.createElement('tr');
+    var d,ot;
+    t.className='table table-condensed stats';
+    for (var s in Stats){
+        var h=document.createElement('th');
+        h.appendChild(document.createTextNode(Stats[s]));
+        r.appendChild(h);
+    }
+    H.appendChild(r);
+    t.appendChild(H);
+    for(var m in st){
+        r=document.createElement('tr');
+        for (s in Stats){
+            d=document.createElement('td');
+            if(st[m][s]!==null)
+                d.appendChild(document.createTextNode(st[m][s]));
+            r.appendChild(d);
+        }
+        B.appendChild(r);
+    }
+    t.appendChild(B);
+    r=document.createElement('tr');
+    d=document.createElement('td');
+    r.appendChild(d);
+    d=document.createElement('td');
+    d.appendChild(document.createTextNode(upd));
+    d.setAttribute('colspan',Stats.length);
+    r.appendChild(d);
+    F.appendChild(r);
+    t.appendChild(F);
+    if(ot=div.getElementsByTagName('table')[0])
+        ot.remove();
+    div.appendChild(t);
 }
 function getJsonDraw(id){
     loadJson(
@@ -274,7 +311,7 @@ function getJsonDraw(id){
         function(data){
             GCharts[id].setDataTable(data.$json_data);
             GCharts[id].draw();
-            updateTime();
+            updateStats(id,data.$json_stats,data.$json_update)
         }
     );
 }
@@ -359,13 +396,14 @@ EOjs;
                 // pass 2: normalize and output item per period
                 foreach ($period_sanitized as $period_name=>$period_filename)
                 {
-                    $rows = [];
+                    // fill data table
+                    $data = [];
 
                     // headings line
                     $r = [$this->gcCol(self::FMT_TIMESTAMP)];
                     foreach ($metric_visibles as $metric_name=>$label)
                         $r[] = $this->gcCol(self::FMT_NUMERIC, $label);
-                    $rows[] = $r;
+                    $data[] = $r;
 
                     // bins
                     if ($period_bin_metric_values)
@@ -393,13 +431,30 @@ EOjs;
                                         ? $this->gcVal($metric_values[$metric_name], self::FMT_NUMERIC)
                                         : null;
                             }
-                            $rows[] = $r;
+                            $data[] = $r;
                         }
                     }
-                    if (count($rows) < 2)
+                    if (count($data) < 2)
                     {
-                        $rows[] = array_fill(0, count($metric_visibles) + 1, null);
+                        $data[] = array_fill(0, count($metric_visibles) + 1, null);
                     }
+
+                    // fill statistics
+                    $stats = [];
+                    $lu = null;
+                    foreach ($metric_visibles as $metric_name=>$label)
+                    {
+                        $r = [$label];
+                        foreach ($store->getMetricStats($metric_name, $period_name, $metric_types[$metric_name]) as $stat_name=>$stat_value)
+                        {
+                            if ($stat_name != Store::STAT_UPDATE)
+                                $r[] = isset($stat_value) ? round($stat_value, 4) : null;
+                            elseif ($stat_value)
+                                $lu = date('Y-m-d H:i:s', $stat_value);
+                        }
+                        $stats[] = $r;
+                    }
+
                     file_put_contents(
                         sprintf(
                             '%s%s%s-%s.json',
@@ -408,7 +463,11 @@ EOjs;
                             Lib::sanitizeFilename($item_name),
                             $period_filename
                         ),
-                        json_encode([self::JSON_DATA=>$rows, self::JSON_STATS=>[]], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                        json_encode([
+                            self::JSON_DATA=>$data,
+                            self::JSON_STATS=>$stats,
+                            self::JSON_UPDATE=>$lu,
+                        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
                     );
                 }
             }

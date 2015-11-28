@@ -9,17 +9,17 @@
 body{padding-top:70px;background-color:#f8f8f8;}
 .page-header{padding-top:55px;margin-top:0;margin-bottom:0;}
 .lead{padding-top:55px;margin-top:0;margin-bottom:0;}
+table.stats th,table.stats td{text-align:right;}
+table.stats th:first-child,table.stats td:first-child{text-align:left;}
 </style>
 <body>
 
 <nav class="navbar navbar-inverse navbar-fixed-top">
   <div class="container">
     <div class="pull-right">
-      <span class="navbar-text hidden-xs"><span class="hidden-sm">Updated:</span> <span id="<?=$Time_id?>"></span></span>&nbsp;
       <button href="#" class="navbar-btn btn btn-default" onclick="update()">
         <span style="font-weight:900;">&#10227;</span>
         <span class="hidden-xs">Refresh</span>
-        <span class="visible-xs-inline" id="<?=$Refresh_id?>"></span>
       </button>
     </div>
     <div class="navbar-header">

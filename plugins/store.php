@@ -34,6 +34,7 @@ Class Store
     const STAT_MIN      = 'mi';
     const STAT_MAX      = 'ma';
     const STAT_AVG      = 'a';
+    const STAT_UPDATE   = 'u';
 
     const TYPE_VALUE    = 'value';
     const TYPE_RATE     = 'rate';
@@ -55,7 +56,7 @@ Class Store
 	}
 
     /** loads metrics from the datastore and calculates the values per period per bin
-     * @return array|boolean    {"metric":{"by day":{"bin1time":["last time", "last", "min", "max", "sum", "cnt"],...},...},...}
+     * @return array|boolean    {"metric":{"by day":{"bin1time":[BIN_FIRST_TIME, BIN_FIRST_TM_INC, ..., BIN_COUNT],...},...},...}
      */
 	public function load()
 	{
@@ -114,6 +115,7 @@ Class Store
             self::STAT_MIN=>null,
             self::STAT_MAX=>null,
             self::STAT_AVG=>null,
+            self::STAT_UPDATE=>null,
         ];
 
         if (isset($this->metric_period_bins[$metric][$period]))
@@ -203,6 +205,8 @@ Class Store
                 }
                 // compute average, $cnt is > 0
                 $stats[self::STAT_AVG] = $sum/$cnt;
+                // last update time
+                $stats[self::STAT_UPDATE] = $metric_period[$last_bin][self::BIN_LAST_TIME];
             }
         }
 
