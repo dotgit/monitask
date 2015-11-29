@@ -374,6 +374,7 @@ EOjs;
                 $metric_hiddens = [];
                 $metric_visibles = [];
                 $period_bin_metric_values = [];
+                $period_metric_stats = [];
 
                 // pass 1: fill $period_bin_metric_values
                 foreach ($item as $metric_name=>$metric)
@@ -390,6 +391,7 @@ EOjs;
                         {
                             foreach ($store->getMetricData($metric_name, $period_name, $metric_types[$metric_name]) as $bin_time=>$value)
                                 $period_bin_metric_values[$period_name][$bin_time][$metric_name] = $value;
+                            $period_metric_stats[$period_name][$metric_name] = $store->getMetricStats($metric_name, $period_name, $metric_types[$metric_name]);
                         }
                     }
                 }
@@ -441,19 +443,72 @@ EOjs;
                     }
 
                     // fill statistics
+                    $stats_metric_parsed = [];
                     $stats = [];
                     $lu = null;
                     foreach ($metric_visibles as $metric_name=>$label)
                     {
-                        $r = [$label];
-                        foreach ($store->getMetricStats($metric_name, $period_name, $metric_types[$metric_name]) as $stat_name=>$stat_value)
+                        $st = $period_metric_stats[$period_name][$metric_name];
+                        if (isset($metric_evals[$metric_name]))
                         {
-                            if ($stat_name != Store::STAT_UPDATE)
-                                $r[] = isset($stat_value) ? round($stat_value, 4) : null;
-                            elseif ($stat_value)
-                                $lu = date('Y-m-d H:i:s', $stat_value);
+                            if (empty($stats_metric_parsed))
+                                foreach ($period_metric_stats[$period_name] as $m_name=>$m_stats)
+                                {
+                                    $stats_metric_parsed[Store::STAT_FIRST][$m_name] = isset($period_metric_stats[$period_name][$m_name][Store::STAT_FIRST])
+                                        ? "({$period_metric_stats[$period_name][$m_name][Store::STAT_FIRST]})"
+                                        : 'null';
+                                    $stats_metric_parsed[Store::STAT_MIN][$m_name] = isset($period_metric_stats[$period_name][$m_name][Store::STAT_MIN])
+                                        ? "({$period_metric_stats[$period_name][$m_name][Store::STAT_MIN]})"
+                                        : 'null';
+                                    $stats_metric_parsed[Store::STAT_AVG][$m_name] = isset($period_metric_stats[$period_name][$m_name][Store::STAT_AVG])
+                                        ? "({$period_metric_stats[$period_name][$m_name][Store::STAT_AVG]})"
+                                        : 'null';
+                                    $stats_metric_parsed[Store::STAT_MAX][$m_name] = isset($period_metric_stats[$period_name][$m_name][Store::STAT_MAX])
+                                        ? "({$period_metric_stats[$period_name][$m_name][Store::STAT_MAX]})"
+                                        : 'null';
+                                    $stats_metric_parsed[Store::STAT_LAST][$m_name] = isset($period_metric_stats[$period_name][$m_name][Store::STAT_LAST])
+                                        ? "({$period_metric_stats[$period_name][$m_name][Store::STAT_LAST]})"
+                                        : 'null';
+                                }
+                            $eval = "return ({$metric_evals[$metric_name]});";
+                            $st = [
+                                Store::STAT_FIRST=>eval(str_replace(
+                                    array_keys($stats_metric_parsed[Store::STAT_FIRST]),
+                                    array_values($stats_metric_parsed[Store::STAT_FIRST]),
+                                    $eval
+                                )),
+                                Store::STAT_MIN=>eval(str_replace(
+                                    array_keys($stats_metric_parsed[Store::STAT_MIN]),
+                                    array_values($stats_metric_parsed[Store::STAT_MIN]),
+                                    $eval
+                                )),
+                                Store::STAT_AVG=>eval(str_replace(
+                                    array_keys($stats_metric_parsed[Store::STAT_AVG]),
+                                    array_values($stats_metric_parsed[Store::STAT_AVG]),
+                                    $eval
+                                )),
+                                Store::STAT_MAX=>eval(str_replace(
+                                    array_keys($stats_metric_parsed[Store::STAT_MAX]),
+                                    array_values($stats_metric_parsed[Store::STAT_MAX]),
+                                    $eval
+                                )),
+                                Store::STAT_LAST=>eval(str_replace(
+                                    array_keys($stats_metric_parsed[Store::STAT_LAST]),
+                                    array_values($stats_metric_parsed[Store::STAT_LAST]),
+                                    $eval
+                                )),
+                            ];
                         }
-                        $stats[] = $r;
+                        $stats[] = [
+                            $label,
+                            isset($st[Store::STAT_FIRST]) ? Lib::humanFloat($st[Store::STAT_FIRST]) : null,
+                            isset($st[Store::STAT_MIN]) ? Lib::humanFloat($st[Store::STAT_MIN]) : null,
+                            isset($st[Store::STAT_AVG]) ? Lib::humanFloat($st[Store::STAT_AVG]) : null,
+                            isset($st[Store::STAT_MAX]) ? Lib::humanFloat($st[Store::STAT_MAX]) : null,
+                            isset($st[Store::STAT_LAST]) ? Lib::humanFloat($st[Store::STAT_LAST]) : null,
+                        ];
+                        if (isset($st[Store::STAT_UPDATE]) and empty($lu))
+                            $lu = date('Y-m-d H:i:s', $st[Store::STAT_UPDATE]);
                     }
 
                     file_put_contents(
