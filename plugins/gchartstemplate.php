@@ -68,14 +68,12 @@ function redraw(name){
     for(var i in GCharts){
       incrementBlocker();
       GCharts[i].draw();
-      google.visualization.events.addListener(GCharts[i], 'ready', decrementBlocker);
     }
   }else{
     for(var i in GCharts){
       if(i.match('^'+name)){
         incrementBlocker();
         GCharts[i].draw();
-        google.visualization.events.addListener(GCharts[i], 'ready', decrementBlocker);
       }
     }
   }
@@ -133,7 +131,6 @@ function getJsonDraw(id){
       GCharts[id].setDataTable(data.<?=$Json_data?>);
       GCharts[id].draw();
       updateStats(id,data.<?=$Json_stats?>,data.<?=$Json_update?>);
-      decrementBlocker();
     }
   );
 }
@@ -150,7 +147,9 @@ function toggleMore(el,cl){
 }
 function drawCharts(){
 <?=$Charts_js?>
-update();
+  for(var i in GCharts)
+    google.visualization.events.addListener(GCharts[i], 'ready', decrementBlocker);
+  update();
 }
 window.onresize = function(){
     if(typeof ResizeInProgress==='undefined'){
