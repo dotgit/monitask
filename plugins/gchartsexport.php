@@ -186,7 +186,8 @@ Class GChartsExport extends Export
                     PHP_EOL
                 );
                 $bk_charts[] = sprintf(
-                    '<p class="lead" id="ref_%s">%s<button class="pull-right btn btn-sm btn-default" onclick="toggleMore(this,\'%s\')">%s</button></p>%s',
+'<p class="lead" id="ref_%s">%s<button class="pull-right btn btn-sm btn-link" onclick="toggleMore(this,\'%s\')">%s</button></p>
+<div class="panel panel-default"><div class="panel-body">',
                     Lib::sanitizeFilename($title),
                     htmlspecialchars($title),
                     $item_clean,
@@ -207,10 +208,12 @@ Class GChartsExport extends Export
                         'options'=>$options,
                     ], JSON_UNESCAPED_UNICODE).");";
                 }
-                $bk_charts[] = '</div>';
+                $bk_charts[] =
+'</div>
+</div></div>';
             }
             $toc[] = sprintf(
-                '<ul class="list-group"><a class="list-group-item" href="#ref_%s"><b>%s</b></a>%s</ul>',
+                '<div class="list-group"><a class="list-group-item" href="#ref_%s"><b>%s</b></a>%s</div>',
                 Lib::sanitizeFilename($block),
                 htmlspecialchars($block),
                 implode('', $bk_toc)

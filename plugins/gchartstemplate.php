@@ -9,6 +9,7 @@
 body{padding-top:70px;background-color:#f8f8f8;}
 .page-header{padding-top:55px;margin-top:0;margin-bottom:0;}
 .lead{padding-top:55px;margin-top:0;margin-bottom:0;}
+.table{margin-bottom:0;}
 table.stats th,table.stats td{text-align:right;}
 table.stats th:first-child,table.stats td:first-child{text-align:left;}
 </style>
@@ -136,8 +137,8 @@ function getJsonDraw(id){
 }
 function toggleMore(el,cl){
     var div=document.getElementsByClassName(cl)[0];
-    if(/ in\$/.test(div.className)){
-        div.className=div.className.replace(/ in\$/,'');
+    if(/ in$/.test(div.className)){
+        div.className=div.className.replace(/ in$/,'');
         el.innerHTML='More...';
     }else{
         div.className+=' in';
