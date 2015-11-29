@@ -11,11 +11,16 @@ Class GChartsExport extends Export
 
     // export section of ini file
     const VAR_EXPORT_DIR    = 'export_dir';
+    const VAR_AJAX_METHOD   = 'ajax_method';
 
     // item directives
     const VAR_CLASS         = 'class';
     const VAR_BASE          = 'base';
     const VAR_CRIT_VALUE    = 'critical_value';
+
+    // ajax method values
+    const A_M_POST  = 'POST';
+    const A_M_GET   = 'GET';
 
     // types of values
     const FMT_NUMERIC   = 'n';
@@ -52,11 +57,14 @@ Class GChartsExport extends Export
     const JSON_UPDATE   = 'update';
 
 	public $export_dir;
+	public $ajax_method = self::A_M_GET;
 
     public function __construct($params)
     {
         if (isset($params[self::VAR_EXPORT_DIR]) and is_dir($params[self::VAR_EXPORT_DIR]))
             $this->export_dir = realpath($params[self::VAR_EXPORT_DIR]);
+        if (isset($params[self::VAR_AJAX_METHOD]) and in_array(strtoupper($params[self::VAR_AJAX_METHOD]), [self::A_M_GET, self::A_M_POST]))
+            $this->ajax_method = strtoupper($params[self::VAR_AJAX_METHOD]);
     }
 
     public function gcDateTime($time)
@@ -205,144 +213,29 @@ Class GChartsExport extends Export
                 '<ul class="list-group"><a class="list-group-item" href="#ref_%s"><b>%s</b></a>%s</ul>',
                 Lib::sanitizeFilename($block),
                 htmlspecialchars($block),
-                implode(PHP_EOL, $bk_toc)
+                implode('', $bk_toc)
             );
             $blocks[] = sprintf(
-                '<h3 class="page-header" id="ref_%s">%s</h3>%s%s',
+                '<h3 class="page-header" id="ref_%s">%s</h3>%s%s%s',
                 Lib::sanitizeFilename($block),
                 htmlspecialchars($block),
                 PHP_EOL,
-                implode(PHP_EOL, $bk_charts)
+                implode(PHP_EOL, $bk_charts),
+                PHP_EOL
             );
         }
-        $charts_js = implode(PHP_EOL, $charts);
-        $packages_js = json_encode(['packages'=>array_keys($packages)]);
+        $Packages_js = json_encode(['packages'=>array_keys($packages)]);
+        $Charts_js = implode(PHP_EOL, $charts);
+        $Ajax_method = $this->ajax_method;
 
         // vars for template
         $Hostname = htmlspecialchars(rtrim(`hostname`));
-        $toc_html = implode(PHP_EOL, $toc);
-        $blocks_html = implode(PHP_EOL, $blocks);
-        $Html_container =
-<<<EOhtml
-<div class="row">
-  <div class="col-sm-3 col-sm-push-9 col-lg-2 col-lg-push-10">
-    $toc_html
-  </div>
-  <div class="col-sm-9 col-sm-pull-3 col-lg-10 col-lg-pull-2">
-    $blocks_html
-  </div>
-</div>
-EOhtml;
-        $json_data = self::JSON_DATA;
-        $json_stats = self::JSON_STATS;
-        $json_update = self::JSON_UPDATE;
-        $Js_footer =
-<<<EOjs
-google.load('visualization', '1', {packages:['corechart']});
-google.setOnLoadCallback(drawChart);
-var GCharts={};
-var Stats=["metric","first","min","avg","max","last"];
-function loadJson(url,fn){
-    var XHR=new XMLHttpRequest();
-    XHR.onreadystatechange=function(){
-        if(XHR.readyState==XMLHttpRequest.DONE && XHR.status==200)
-            fn(JSON.parse(XHR.responseText));
-    }
-    XHR.open('POST',url);
-    XHR.send();
-}
-function redraw(name){
-    if(name===undefined){
-        for(var i in GCharts)
-            GCharts[i].draw();
-    }else{
-        for(var i in GCharts)
-            if(i.match('^'+name))
-                GCharts[i].draw();
-    }
-}
-function update(id){
-    for(var i in GCharts)
-        getJsonDraw(i);
-}
-function updateStats(id,st,upd){
-    var div=document.getElementById('stats_'+id);
-    var t=document.createElement('table');
-    var H=document.createElement('thead');
-    var B=document.createElement('tbody');
-    var F=document.createElement('tfoot');
-    var r=document.createElement('tr');
-    var d,ot;
-    t.className='table table-condensed stats';
-    for (var s in Stats){
-        var h=document.createElement('th');
-        h.appendChild(document.createTextNode(Stats[s]));
-        r.appendChild(h);
-    }
-    H.appendChild(r);
-    t.appendChild(H);
-    for(var m in st){
-        r=document.createElement('tr');
-        for (s in Stats){
-            d=document.createElement('td');
-            if(st[m][s]!==null)
-                d.appendChild(document.createTextNode(st[m][s]));
-            r.appendChild(d);
-        }
-        B.appendChild(r);
-    }
-    t.appendChild(B);
-    r=document.createElement('tr');
-    d=document.createElement('td');
-    r.appendChild(d);
-    d=document.createElement('td');
-    if(upd!==null)
-        d.appendChild(document.createTextNode(upd));
-    d.setAttribute('colspan',Stats.length);
-    r.appendChild(d);
-    F.appendChild(r);
-    t.appendChild(F);
-    if(ot=div.getElementsByTagName('table')[0])
-        ot.remove();
-    div.appendChild(t);
-}
-function getJsonDraw(id){
-    loadJson(
-        id+'.json',
-        function(data){
-            GCharts[id].setDataTable(data.$json_data);
-            GCharts[id].draw();
-            updateStats(id,data.$json_stats,data.$json_update)
-        }
-    );
-}
-function toggleMore(el,cl){
-    var div=document.getElementsByClassName(cl)[0];
-    if(/ in\$/.test(div.className)){
-        div.className=div.className.replace(/ in\$/,'');
-        el.innerHTML='More...';
-    }else{
-        div.className+=' in';
-        el.innerHTML='Less...';
-        redraw(cl);
-    }
-}
-function drawChart(){
-$charts_js
-update();
-}
-window.onresize = function(){
-    if(typeof ResizeInProgress==='undefined'){
-        ResizeInProgress=true;
-        window.setTimeout(function(){
-            ResizeInProgress=undefined;
-            redraw();
-        },1000);
-    }
-};
-window.setInterval(update,300000);
+        $Toc_html = implode(PHP_EOL, $toc);
+        $Blocks_html = implode(PHP_EOL, $blocks);
 
-EOjs;
+        $Json_data = self::JSON_DATA;
+        $Json_stats = self::JSON_STATS;
+        $Json_update = self::JSON_UPDATE;
 
         include 'plugins/gchartstemplate.php';
 

@@ -18,7 +18,7 @@ table.stats th:first-child,table.stats td:first-child{text-align:left;}
   <div class="container">
     <div class="pull-right">
       <button href="#" class="navbar-btn btn btn-default" onclick="update()">
-        <span style="font-weight:900;">&#10227;</span>
+        <span style="font-weight:900;">&orarr;</span>
         <span class="hidden-xs">Refresh</span>
       </button>
     </div>
@@ -29,10 +29,119 @@ table.stats th:first-child,table.stats td:first-child{text-align:left;}
 </nav>
 
 <div class="container">
-<?=$Html_container?>
+  <div class="row">
+    <div class="col-sm-3 col-sm-push-9 col-lg-2 col-lg-push-10">
+      <?=$Toc_html?>
+    </div>
+    <div class="col-sm-9 col-sm-pull-3 col-lg-10 col-lg-pull-2">
+      <?=$Blocks_html?>
+    </div>
+  </div>
 </div>
 
 <script type="text/javascript" src="//www.google.com/jsapi"></script>
 <script type="text/javascript">
-<?=$Js_footer?>
+google.load('visualization', '1', {packages:['corechart']});
+google.setOnLoadCallback(drawChart);
+var GCharts={};
+var Stats=["metric","first","min","avg","max","last"];
+function loadJson(url,fn){
+  var XHR=new XMLHttpRequest();
+  XHR.onreadystatechange=function(){
+    if(XHR.readyState==XMLHttpRequest.DONE && XHR.status==200)
+      fn(JSON.parse(XHR.responseText));
+  }
+  XHR.open('<?=$Ajax_method?>',url);
+  XHR.send();
+}
+function redraw(name){
+  if(name===undefined){
+    for(var i in GCharts)
+      GCharts[i].draw();
+  }else{
+    for(var i in GCharts)
+      if(i.match('^'+name))
+        GCharts[i].draw();
+  }
+}
+function update(){
+  for(var i in GCharts)
+    getJsonDraw(i);
+}
+function updateStats(id,st,upd){
+  var div=document.getElementById('stats_'+id);
+  var t=document.createElement('table');
+  var H=document.createElement('thead');
+  var B=document.createElement('tbody');
+  var F=document.createElement('tfoot');
+  var r=document.createElement('tr');
+  var d,ot;
+  t.className='table table-condensed stats';
+  for (var s in Stats){
+    var h=document.createElement('th');
+    h.appendChild(document.createTextNode(Stats[s]));
+    r.appendChild(h);
+  }
+  H.appendChild(r);
+  t.appendChild(H);
+  for(var m in st){
+    r=document.createElement('tr');
+    for (s in Stats){
+      d=document.createElement('td');
+      if(st[m][s]!==null)
+        d.appendChild(document.createTextNode(st[m][s]));
+      r.appendChild(d);
+    }
+    B.appendChild(r);
+  }
+  t.appendChild(B);
+  r=document.createElement('tr');
+  d=document.createElement('td');
+  r.appendChild(d);
+  d=document.createElement('td');
+  if(upd!==null)
+    d.appendChild(document.createTextNode(upd));
+  d.setAttribute('colspan',Stats.length);
+  r.appendChild(d);
+  F.appendChild(r);
+  t.appendChild(F);
+  if(ot=div.getElementsByTagName('table')[0])
+    ot.remove();
+  div.appendChild(t);
+}
+function getJsonDraw(id){
+  loadJson(
+    id+'.json',
+    function(data){
+      GCharts[id].setDataTable(data.<?=$Json_data?>);
+      GCharts[id].draw();
+      updateStats(id,data.<?=$Json_stats?>,data.<?=$Json_update?>)
+    }
+  );
+}
+function toggleMore(el,cl){
+    var div=document.getElementsByClassName(cl)[0];
+    if(/ in\$/.test(div.className)){
+        div.className=div.className.replace(/ in\$/,'');
+        el.innerHTML='More...';
+    }else{
+        div.className+=' in';
+        el.innerHTML='Less...';
+        redraw(cl);
+    }
+}
+function drawChart(){
+<?=$Charts_js?>
+update();
+}
+window.onresize = function(){
+    if(typeof ResizeInProgress==='undefined'){
+        ResizeInProgress=true;
+        window.setTimeout(function(){
+            ResizeInProgress=undefined;
+            redraw();
+        },1000);
+    }
+};
+window.setInterval(update,300000);
 </script>
