@@ -17,7 +17,7 @@ table.stats th:first-child,table.stats td:first-child{text-align:left;}
 <nav class="navbar navbar-inverse navbar-fixed-top">
   <div class="container">
     <div class="pull-right">
-      <button href="#" class="navbar-btn btn btn-default" onclick="update()">
+      <button id="refresh_btn" href="#" class="navbar-btn btn btn-default" onclick="update()">
         <span style="font-weight:900;">&orarr;</span>
         <span class="hidden-xs">Refresh</span>
       </button>
@@ -42,7 +42,8 @@ table.stats th:first-child,table.stats td:first-child{text-align:left;}
 <script type="text/javascript" src="//www.google.com/jsapi"></script>
 <script type="text/javascript">
 google.load('visualization', '1', {packages:['corechart']});
-google.setOnLoadCallback(drawChart);
+google.setOnLoadCallback(drawCharts);
+var Blocker=0;
 var GCharts={};
 var Stats=["metric","first","min","avg","max","last"];
 function loadJson(url,fn){
@@ -54,14 +55,29 @@ function loadJson(url,fn){
   XHR.open('<?=$Ajax_method?>',url);
   XHR.send();
 }
+function incrementBlocker(){
+    if(!Blocker++)
+      document.getElementById('refresh_btn').disabled=true;
+}
+function decrementBlocker(){
+    if(!--Blocker)
+      document.getElementById('refresh_btn').disabled=false;
+}
 function redraw(name){
   if(name===undefined){
-    for(var i in GCharts)
+    for(var i in GCharts){
+      incrementBlocker();
       GCharts[i].draw();
+      google.visualization.events.addListener(GCharts[i], 'ready', decrementBlocker);
+    }
   }else{
-    for(var i in GCharts)
-      if(i.match('^'+name))
+    for(var i in GCharts){
+      if(i.match('^'+name)){
+        incrementBlocker();
         GCharts[i].draw();
+        google.visualization.events.addListener(GCharts[i], 'ready', decrementBlocker);
+      }
+    }
   }
 }
 function update(){
@@ -110,12 +126,14 @@ function updateStats(id,st,upd){
   div.appendChild(t);
 }
 function getJsonDraw(id){
+  incrementBlocker();
   loadJson(
     id+'.json',
     function(data){
       GCharts[id].setDataTable(data.<?=$Json_data?>);
       GCharts[id].draw();
-      updateStats(id,data.<?=$Json_stats?>,data.<?=$Json_update?>)
+      updateStats(id,data.<?=$Json_stats?>,data.<?=$Json_update?>);
+      decrementBlocker();
     }
   );
 }
@@ -130,7 +148,7 @@ function toggleMore(el,cl){
         redraw(cl);
     }
 }
-function drawChart(){
+function drawCharts(){
 <?=$Charts_js?>
 update();
 }
