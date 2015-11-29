@@ -71,7 +71,7 @@ Class Store
 		return true;
 	}
 
-	public function periodNextBin($period, $time, $bin_times=[])
+	public function periodNextBin($period, $time, array $bin_times=[])
 	{
         $tm = $bin_times ? max($bin_times) : $this->start_time;
         while ($tm < $time)
@@ -218,7 +218,7 @@ Class Store
      * @param array $metrics    {"metric-name":"value", ...}
      * @return boolean
      */
-    public function insertMetrics($time, $metrics=[])
+    public function insertMetrics($time, array $metrics=[])
 	{
         if (! $this->load())
             return false;
@@ -227,28 +227,28 @@ Class Store
         $period_first = [];
         foreach ($metrics as $metric=>$value)
         {
-            foreach ($this->periods as $period=>$format)
+            foreach ($this->periods as $period_name=>$format)
             {
-                if (isset($this->metric_period_bins[$metric][$period]))
+                if (isset($this->metric_period_bins[$metric][$period_name]))
                 {
-                    $bin_times = array_keys($this->metric_period_bins[$metric][$period]);
+                    $bin_times = array_keys($this->metric_period_bins[$metric][$period_name]);
                     $bin_prev_id = max($bin_times);
-                    $bin_id = $this->periodNextBin($period, $time, $bin_times);
+                    $bin_id = $this->periodNextBin($period_name, $time, $bin_times);
                 }
-                elseif (isset($period_first[$period]))
+                elseif (isset($period_first[$period_name]))
                 {
                     $bin_prev_id = null;
-                    $bin_id = $period_first[$period];
+                    $bin_id = $period_first[$period_name];
                 }
                 else
                 {
                     $bin_prev_id = null;
-                    $bin_id = $period_first[$period] = $this->periodNextBin($period, $time);
+                    $bin_id = $period_first[$period_name] = $this->periodNextBin($period_name, $time);
                 }
 
-                if (isset($this->metric_period_bins[$metric][$period][$bin_id]))
+                if (isset($this->metric_period_bins[$metric][$period_name][$bin_id]))
                 {
-                    $bin = &$this->metric_period_bins[$metric][$period][$bin_id];
+                    $bin = &$this->metric_period_bins[$metric][$period_name][$bin_id];
                     $time_inc = $time - $bin[self::BIN_LAST_TIME];
                     $value_inc = $value - $bin[self::BIN_LAST_VALUE];
 
@@ -286,12 +286,12 @@ Class Store
                 else
                 {
                     $value_inc = isset($bin_prev_id)
-                        ? $value - $this->metric_period_bins[$metric][$period][$bin_prev_id][self::BIN_LAST_VALUE]
+                        ? $value - $this->metric_period_bins[$metric][$period_name][$bin_prev_id][self::BIN_LAST_VALUE]
                         : 0;
                     $time_inc = isset($bin_prev_id)
-                        ? $time - $this->metric_period_bins[$metric][$period][$bin_prev_id][self::BIN_LAST_TIME]
-                        : $this->periods_seconds[$period];
-                    $this->metric_period_bins[$metric][$period][$bin_id] = [
+                        ? $time - $this->metric_period_bins[$metric][$period_name][$bin_prev_id][self::BIN_LAST_TIME]
+                        : $this->periods_seconds[$period_name];
+                    $this->metric_period_bins[$metric][$period_name][$bin_id] = [
                         self::BIN_FIRST_TIME=>$time,
                         self::BIN_FIRST_TM_INC=>$time_inc,
                         self::BIN_FIRST_VALUE=>$value,
@@ -315,10 +315,10 @@ Class Store
                 // if added new bin then check number of bins and remove older ones
                 if ($bin_prev_id != $bin_id and isset($bin_prev_id))
                 {
-                    $bin_times = array_keys($this->metric_period_bins[$metric][$period]);
+                    $bin_times = array_keys($this->metric_period_bins[$metric][$period_name]);
                     sort($bin_times, SORT_NUMERIC);
                     while (count($bin_times) > $this->bins_count)
-                        unset($this->metric_period_bins[$metric][$period][array_shift($bin_times)]);
+                        unset($this->metric_period_bins[$metric][$period_name][array_shift($bin_times)]);
                 }
             }
         }

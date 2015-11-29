@@ -17,7 +17,7 @@ Class CsvStore extends Store
 	public $filename;
 	public $handle;
 
-	public function __construct($params, $periods)
+	public function __construct(array $params, array $periods)
 	{
         // set bins count
         $this->bins_count = ! empty($params[self::VAR_BINS]) ? (int)$params[self::VAR_BINS] : 100;
@@ -51,14 +51,14 @@ Class CsvStore extends Store
             $this->error = __METHOD__.': period must be an array';
             return;
         }
-        foreach ($periods as $name=>$format)
+        foreach ($periods as $period_name=>$format)
         {
-            if ($period_tm = strtotime($format)
+            if ($period_tm = strtotime($format, $_SERVER['REQUEST_TIME'])
                 and $period_tm < $_SERVER['REQUEST_TIME']
             )
-                $this->periods_seconds[$name] = (int)(($_SERVER['REQUEST_TIME'] - $period_tm)/$this->bins_count);
+                $this->periods_seconds[$period_name] = (int)(($_SERVER['REQUEST_TIME'] - $period_tm)/$this->bins_count);
             else
-                $errors[] = __METHOD__.": wrong strtotime format '$format' in period '$name'";
+                $errors[] = __METHOD__.": wrong strtotime format '$format' in period '$period_name'";
         }
 
         if ($errors)
@@ -167,22 +167,29 @@ Class CsvStore extends Store
             return false;
         }
 
+        // define minimal dates per periods
+        $period_min = [];
+        foreach ($this->periods as $period_name=>$format)
+            $period_min[$period_name] = strtotime($format, $_SERVER['REQUEST_TIME']);
+
         ksort($this->metric_period_bins);
 
         $errors = [];
         foreach ($this->metric_period_bins as $metric=>$periods)
         {
-            foreach ($periods as $period=>$bins)
+            foreach ($periods as $period_name=>$bins)
             {
-                foreach ($bins as $bin_id=>$bin)
+                foreach ($bins as $bin_tm=>$bin)
                 {
-                    if (! fputcsv($this->handle, array_merge([$metric, $period, $bin_id], $bin)))
+                    if ($bin_tm < $period_min[$period_name])
+                        continue;
+                    if (! fputcsv($this->handle, array_merge([$metric, $period_name, $bin_tm], $bin)))
                         $errors[] = sprintf(
                             "%s: error updating metric '%s', period '%s', bin '%s' in %s datafile",
                             __METHOD__,
                             $metric,
-                            $period,
-                            date('Y-m-d H:i:s', $bin_id),
+                            $period_name,
+                            date('Y-m-d H:i:s', $bin_tm),
                             $this->filename
                         );
                 }
