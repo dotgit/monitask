@@ -10,6 +10,14 @@ body{padding-top:70px;background-color:#f8f8f8;}
 .page-header{padding-top:55px;margin-top:0;margin-bottom:0;}
 .lead{padding-top:55px;margin-top:0;margin-bottom:0;}
 .table{margin-bottom:0;}
+.table-condensed>tbody>tr>td,
+.table-condensed>tbody>tr>th,
+.table-condensed>tfoot>tr>td,
+.table-condensed>tfoot>tr>th,
+.table-condensed>thead>tr>td,
+.table-condensed>thead>tr>th{padding:2px;}
+.table-condensed>tfoot>tr>td,
+.table-condensed>tfoot>tr>th{padding-bottom:0;}
 table.stats th,table.stats td{text-align:right;}
 table.stats th:first-child,table.stats td:first-child{text-align:left;}
 </style>
