@@ -55,6 +55,7 @@ Class GChartsExport extends Export
     const JSON_DATA     = 'data';
     const JSON_STATS    = 'stats';
     const JSON_UPDATE   = 'update';
+    const JSON_FROM     = 'from';
 
 	public $export_dir;
 	public $ajax_method = self::A_M_GET;
@@ -215,7 +216,7 @@ Class GChartsExport extends Export
                         "containerId"=>$id,
                         "chartType"=>$class,
                         'options'=>$options,
-                    ], JSON_UNESCAPED_UNICODE).");";
+                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).");";
                 }
                 $bk_charts[] =
 '  </div></div>
@@ -236,7 +237,10 @@ Class GChartsExport extends Export
                 PHP_EOL
             );
         }
-        $Packages_js = json_encode(['packages'=>array_keys($packages)]);
+        $Packages_js = json_encode(
+            ['packages'=>array_keys($packages)],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        );
         $Charts_js = implode(PHP_EOL, $charts);
         $Ajax_method = $this->ajax_method;
 
@@ -248,6 +252,7 @@ Class GChartsExport extends Export
         $Json_data = self::JSON_DATA;
         $Json_stats = self::JSON_STATS;
         $Json_update = self::JSON_UPDATE;
+        $Json_from = self::JSON_FROM;
 
         include 'plugins/gchartstemplate.php';
 
@@ -261,9 +266,13 @@ Class GChartsExport extends Export
             $this->error = __METHOD__.': '.self::VAR_EXPORT_DIR.' parameter not set or is not a directory';
             return false;
         }
+        $period_times = [];
         $period_sanitized = [];
         foreach ($periods as $period_name=>$format)
+        {
+            $period_times[$period_name] = strtotime($format, $_SERVER['REQUEST_TIME']);
             $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
+        }
 
         foreach ($items as $block=>$bk_items)
         {
@@ -351,6 +360,7 @@ Class GChartsExport extends Export
                     $stats_metric_parsed = [];
                     $stats = [];
                     $lu = null;
+                    $md = null;
                     foreach ($metric_visibles as $metric_name=>$label)
                     {
                         $st = $period_metric_stats[$period_name][$metric_name];
@@ -428,7 +438,8 @@ Class GChartsExport extends Export
                             self::JSON_DATA=>$data,
                             self::JSON_STATS=>$stats,
                             self::JSON_UPDATE=>$lu,
-                        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                            self::JSON_FROM=>$this->gcDateTime($period_times[$period_name]),
+                        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
                     );
                 }
             }

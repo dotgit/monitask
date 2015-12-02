@@ -138,6 +138,7 @@ function getJsonDraw(id){
     id+'.json',
     function(data){
       GCharts[id].setDataTable(data.<?=$Json_data?>);
+      GCharts[id].setOption('hAxis.minValue',data.<?=$Json_from?>);
       GCharts[id].draw();
       updateStats(id,data.<?=$Json_stats?>,data.<?=$Json_update?>);
     }
