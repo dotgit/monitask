@@ -114,9 +114,13 @@ Class GChartsExport extends Export
 
     public function template(array $items, array $periods, Store $store)
     {
+        $period_times = [];
         $period_sanitized = [];
         foreach ($periods as $period_name=>$format)
+        {
+            $period_times[$period_name] = strtotime($format, $_SERVER['REQUEST_TIME']);
             $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
+        }
         list($first_period) = array_keys($periods);
         $packages = [];
         $toc = [];
@@ -152,6 +156,7 @@ Class GChartsExport extends Export
                     'backgroundColor'=>'none',
                     'fontSize'=>12,
                     'height'=>300,
+                    'hAxis'=>['minValue'=>null],
                     'vAxis'=>['format'=>'short'],
                 ]);
 
@@ -186,17 +191,21 @@ Class GChartsExport extends Export
                     PHP_EOL
                 );
                 $bk_charts[] = sprintf(
-'<p class="lead" id="ref_%s">%s<button class="pull-right btn btn-sm btn-link" onclick="toggleMore(this,\'%s\')">%s</button></p>
-<div class="panel panel-default"><div class="panel-body">',
+'<p class="lead" id="ref_%s">
+  <button class="pull-right btn btn-sm btn-link" onclick="toggleMore(this,\'%s\')">%s</button>
+  %s
+</p>
+<div class="panel panel-default">
+  <div class="panel-body">',
                     Lib::sanitizeFilename($title),
-                    htmlspecialchars($title),
                     $item_clean,
                     'More...',
-                    PHP_EOL
+                    htmlspecialchars($title)
                 );
                 foreach ($period_sanitized as $period_name=>$period_file)
                 {
                     $options['title'] = "$title - $period_name";
+                    $options['hAxis']['minValue'] = $this->gcDateTime($period_times[$period_name]);
                     $id = "$item_clean-$period_file";
                     $bk_charts[] = "<div id=\"$id\"></div><div id=\"stats_$id\"></div>";
                     if ($period_name == $first_period)
@@ -209,8 +218,8 @@ Class GChartsExport extends Export
                     ], JSON_UNESCAPED_UNICODE).");";
                 }
                 $bk_charts[] =
-'</div>
-</div></div>';
+'  </div></div>
+</div>';
             }
             $toc[] = sprintf(
                 '<div class="list-group"><a class="list-group-item" href="#ref_%s"><b>%s</b></a>%s</div>',
