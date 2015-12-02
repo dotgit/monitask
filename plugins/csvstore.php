@@ -19,22 +19,6 @@ Class CsvStore extends Store
 
 	public function __construct(array $params, array $periods)
 	{
-        // set bins count
-        $this->bins_count = ! empty($params[self::VAR_BINS]) ? (int)$params[self::VAR_BINS] : 100;
-        if ($this->bins_count < 1)
-        {
-            $this->error = __METHOD__.': '.self::VAR_BINS.' parameter must be positive integer';
-            return;
-        }
-
-        // set start time
-        $this->start_time = strtotime(isset($params[self::VAR_START_TIME]) ? $params[self::VAR_START_TIME] : '2015-01-01');
-        if (empty($this->start_time))
-        {
-            $this->error = __METHOD__.': '.self::VAR_START_TIME.' parameter not set or is not formatted as YYYY-MM-DD';
-            return;
-        }
-
         // set datastore filename
         if (! isset($params[self::VAR_FILENAME]))
         {
@@ -43,26 +27,7 @@ Class CsvStore extends Store
         }
         $this->filename = $params[self::VAR_FILENAME];
 
-        // set periods
-        $errors = [];
-        $this->periods = $periods;
-        if (! is_array($this->periods))
-        {
-            $this->error = __METHOD__.': period must be an array';
-            return;
-        }
-        foreach ($periods as $period_name=>$format)
-        {
-            if ($period_tm = strtotime($format, $_SERVER['REQUEST_TIME'])
-                and $period_tm < $_SERVER['REQUEST_TIME']
-            )
-                $this->periods_seconds[$period_name] = (int)(($_SERVER['REQUEST_TIME'] - $period_tm)/$this->bins_count);
-            else
-                $errors[] = __METHOD__.": wrong strtotime format '$format' in period '$period_name'";
-        }
-
-        if ($errors)
-            $this->error = implode(PHP_EOL, $errors);
+        parent::__construct($params, $periods);
     }
 
 	public function create()
