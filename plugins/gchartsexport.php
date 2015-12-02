@@ -438,7 +438,7 @@ Class GChartsExport extends Export
                             self::JSON_DATA=>$data,
                             self::JSON_STATS=>$stats,
                             self::JSON_UPDATE=>$lu,
-                            self::JSON_FROM=>$this->gcDateTime($period_times[$period_name]+$store->periods_seconds[$period_name]),
+                            self::JSON_FROM=>$this->gcDateTime($period_times[$period_name]+($store->periods_seconds[$period_name]<<1)),
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
                     );
                 }
