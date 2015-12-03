@@ -103,6 +103,10 @@ Class Lib
             return \strlen($t = \round($amount_abs, 3)) < 5
                 ? \round($amount, 3)
                 : \str_replace('0.', '.', \round($amount, 3));
+        elseif ($amount_abs > 0)
+            return $amount > 0
+                ? '+0'
+                : '-0';
         else
             return 0;
     }

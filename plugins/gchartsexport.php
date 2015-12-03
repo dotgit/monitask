@@ -137,8 +137,8 @@ Class GChartsExport extends Export
                 $class = Lib::arrayExtract($item, self::VAR_CLASS, 'AreaChart');
                 $title = Lib::arrayExtract($item, self::VAR_TITLE, $item_name);
                 $options = Lib::arrayExtract($item, self::VAR_OPTIONS, []);
-                $base = Lib::arrayExtract($item, self::VAR_BASE);
-                $crit_value = Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
+                Lib::arrayExtract($item, self::VAR_BASE);
+                Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
 
                 $item_clean = Lib::sanitizeFilename($item_name);
 
@@ -274,18 +274,17 @@ Class GChartsExport extends Export
             $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
         }
 
-        foreach ($items as $block=>$bk_items)
+        foreach ($items as $bk_items)
         {
             foreach ($bk_items as $item_name=>$item)
             {
-                $class = Lib::arrayExtract($item, self::VAR_CLASS, 'AreaChart');
-                $title = Lib::arrayExtract($item, self::VAR_TITLE, $item_name);
-                $options = Lib::arrayExtract($item, self::VAR_OPTIONS, []);
+                Lib::arrayExtract($item, self::VAR_CLASS, 'AreaChart');
+                Lib::arrayExtract($item, self::VAR_TITLE, $item_name);
+                Lib::arrayExtract($item, self::VAR_OPTIONS, []);
 
                 $metric_titles = [];
                 $metric_types = [];
                 $metric_evals = [];
-                $metric_hiddens = [];
                 $metric_visibles = [];
                 $period_bin_metric_values = [];
                 $period_metric_stats = [];
@@ -360,7 +359,6 @@ Class GChartsExport extends Export
                     $stats_metric_parsed = [];
                     $stats = [];
                     $lu = null;
-                    $md = null;
                     foreach ($metric_visibles as $metric_name=>$label)
                     {
                         $st = $period_metric_stats[$period_name][$metric_name];
