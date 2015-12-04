@@ -2,13 +2,16 @@
 
 namespace Plugins;
 
+use Lib;
+
 Class Store
 {
     // datastore section of ini file
-    const VAR_BLOCK         = 'block';
-    const VAR_START_TIME    = 'start_time';
-    const VAR_BINS          = 'bins';
     const VAR_TYPE          = 'type';
+    const VAR_PERIOD        = 'period';
+    const VAR_BINS          = 'bins';
+    const VAR_START_TIME    = 'start_time';
+    const VAR_BLOCK         = 'block';
 
     // bin parameters
     const BIN_FIRST_TIME    = 0;
@@ -41,13 +44,13 @@ Class Store
     const TYPE_INC      = 'increment';
 
     public $start_time;
-    public $periods             = [];
+	public $periods             = [];   // {"period-name":"strtotime-pattern", ...}
     public $periods_seconds     = [];
-    public $metric_period_bins  = [];
+    public $metric_period_bins  = [];   // {"metric-name":{"period-name":{"bin-time":[metric values],...},...},...}
 	public $bins_count;
     public $error;
 
-	public function __construct(array $params, array $periods)
+	public function __construct(array $params)
 	{
         // set bins count
         $this->bins_count = ! empty($params[self::VAR_BINS]) ? (int)$params[self::VAR_BINS] : 100;
@@ -66,14 +69,14 @@ Class Store
         }
 
         // set periods
-        $errors = [];
-        $this->periods = $periods;
+        $this->periods = Lib::arrayExtract($params, self::VAR_PERIOD);
         if (! is_array($this->periods))
         {
-            $this->error = __METHOD__.': period must be an array';
+            $this->error = __METHOD__.': period directive must be an array';
             return;
         }
-        foreach ($periods as $period_name=>$format)
+        $errors = [];
+        foreach ($this->periods as $period_name=>$format)
         {
             if ($period_tm = strtotime($format, $_SERVER['REQUEST_TIME'])
                 and $period_tm < $_SERVER['REQUEST_TIME']
@@ -95,15 +98,15 @@ Class Store
 		return true;
 	}
 
-    /** loads metrics from the datastore and calculates the values per period per bin
-     * @return array|boolean    {"metric":{"by day":{"bin1time":[BIN_FIRST_TIME, BIN_FIRST_TM_INC, ..., BIN_COUNT],...},...},...}
+    /** loads metrics from the datastore into $this->metric_period_bins by calculating values per period per bin
+     * @return boolean
      */
 	public function load()
 	{
 		return true;
 	}
 
-    /** writes metrics to the datastore
+    /** writes metrics from $this->metric_period_bins to the datastore
      * @return boolean
      */
 	public function flush()

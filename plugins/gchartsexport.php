@@ -62,9 +62,15 @@ Class GChartsExport extends Export
 
     public function __construct($params)
     {
-        if (isset($params[self::VAR_EXPORT_DIR]) and is_dir($params[self::VAR_EXPORT_DIR]))
+        // set export dir
+        if (isset($params[self::VAR_EXPORT_DIR])
+            and is_dir($params[self::VAR_EXPORT_DIR])
+        )
             $this->export_dir = realpath($params[self::VAR_EXPORT_DIR]);
-        if (isset($params[self::VAR_AJAX_METHOD]) and in_array(strtoupper($params[self::VAR_AJAX_METHOD]), [self::A_M_GET, self::A_M_POST]))
+        // set ajax method
+        if (isset($params[self::VAR_AJAX_METHOD])
+            and in_array(strtoupper($params[self::VAR_AJAX_METHOD]), [self::A_M_GET, self::A_M_POST])
+        )
             $this->ajax_method = strtoupper($params[self::VAR_AJAX_METHOD]);
     }
 
@@ -113,16 +119,22 @@ Class GChartsExport extends Export
         }
     }
 
-    public function template(array $items, array $periods, Store $store)
+    public function template(array $items, Store $store)
     {
+        if (empty($store->periods))
+        {
+            error_log(Store::VAR_PERIOD.' directive is not set');
+            return false;
+        }
+
         $period_times = [];
         $period_sanitized = [];
-        foreach ($periods as $period_name=>$format)
+        foreach ($store->periods as $period_name=>$format)
         {
             $period_times[$period_name] = strtotime($format, $_SERVER['REQUEST_TIME']);
             $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
         }
-        list($first_period) = array_keys($periods);
+        list($first_period) = array_keys($store->periods);
         $packages = [];
         $toc = [];
         $blocks = [];
@@ -259,7 +271,7 @@ Class GChartsExport extends Export
         return true;
     }
 
-    public function export(array $items, array $periods, Store $store)
+    public function export(array $items, Store $store)
     {
         if (empty($this->export_dir))
         {
@@ -268,7 +280,7 @@ Class GChartsExport extends Export
         }
         $period_times = [];
         $period_sanitized = [];
-        foreach ($periods as $period_name=>$format)
+        foreach ($store->periods as $period_name=>$format)
         {
             $period_times[$period_name] = strtotime($format, $_SERVER['REQUEST_TIME']);
             $period_sanitized[$period_name] = Lib::sanitizeFilename($period_name);
@@ -322,7 +334,7 @@ Class GChartsExport extends Export
                     $data[] = $r;
 
                     // bins
-                    if ($period_bin_metric_values)
+                    if (isset($period_bin_metric_values[$period_name]))
                     {
                         ksort($period_bin_metric_values[$period_name]);
                         foreach ($period_bin_metric_values[$period_name] as $bin_time=>$metric_values)

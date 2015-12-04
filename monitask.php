@@ -2,15 +2,14 @@
 
 use Plugins\CsvStore;
 use Plugins\Export;
-use Plugins\Store;
 use Plugins\GChartsExport;
+use Plugins\Store;
 use Plugins\TextExport;
 
 Class Monitask
 {
     // global vars of ini file
     const VAR_INCLUDE   = 'include';
-    const VAR_PERIOD    = 'period';
 
     // main sections
     const SECTION_DATASTORE = 'datastore';
@@ -20,7 +19,6 @@ Class Monitask
 	public static $platform;        // "freebsd"
 	public static $architecture;    // "amd64"
     public static $ini;             // {ini file contents}
-	public static $periods = [];    // {"period-name":"strtotime-pattern", ...}
 	public static $includes = [];   // {"file-full-name":true, ...}
 	public static $commands = [];   // {"cmd-name":"command", ...}
 	public static $metrics  = [];   // {"metric-name":["time", "value"], ...}
@@ -40,11 +38,6 @@ Class Monitask
 		{
             // CORE DIRECTIVES
 
-            // configure periods
-            self::$periods = Lib::arrayExtract(self::$ini, self::VAR_PERIOD);
-            if (! is_array(self::$periods))
-                self::$periods = [];
-
             // configure datastore
             $datastore = Lib::arrayExtract(self::$ini, self::SECTION_DATASTORE);
 			if ($ds_type = Lib::arrayExtract($datastore, Store::VAR_TYPE))
@@ -52,7 +45,7 @@ Class Monitask
 				switch ($ds_type)
 				{
 				case CsvStore::TYPE_CSV:
-					self::$store = new CsvStore($datastore, self::$periods);
+					self::$store = new CsvStore($datastore);
 					break;
 				default:
                     error_log(sprintf(
@@ -211,7 +204,12 @@ Class Monitask
             error_log('['.self::SECTION_EXPORT.'] section is not configured');
             return false;
         }
-        elseif (self::$export->template(self::$items, self::$periods, self::$store))
+        elseif (empty(self::$store))
+        {
+            error_log('['.self::SECTION_DATASTORE.'] section is not configured');
+            return false;
+        }
+        elseif (self::$export->template(self::$items, self::$store))
             return true;
         else
         {
@@ -225,6 +223,11 @@ Class Monitask
         if (empty(self::$store))
         {
             error_log('['.self::SECTION_DATASTORE.'] section is not configured');
+            return false;
+        }
+        elseif (empty(self::$store->periods))
+        {
+            error_log(Store::VAR_PERIOD.' directive is not set');
             return false;
         }
 
@@ -276,14 +279,14 @@ Class Monitask
             error_log('export items are not configured');
             return false;
         }
-        elseif (empty(self::$periods))
+        elseif (empty(self::$store->periods))
         {
-            error_log(self::VAR_PERIOD.' directive is not set');
+            error_log(Store::VAR_PERIOD.' directive is not set');
             return false;
         }
         elseif (self::$store->load())
         {
-            if (self::$export->export(self::$items, self::$periods, self::$store))
+            if (self::$export->export(self::$items, self::$store))
                 return true;
             else
             {

@@ -17,7 +17,7 @@ Class CsvStore extends Store
 	public $filename;
 	public $handle;
 
-	public function __construct(array $params, array $periods)
+	public function __construct(array $params)
 	{
         // set datastore filename
         if (! isset($params[self::VAR_FILENAME]))
@@ -27,7 +27,7 @@ Class CsvStore extends Store
         }
         $this->filename = $params[self::VAR_FILENAME];
 
-        parent::__construct($params, $periods);
+        parent::__construct($params);
     }
 
 	public function create()
@@ -129,6 +129,12 @@ Class CsvStore extends Store
         if (empty($this->metric_period_bins))
         {
             $this->error = __METHOD__.': datastore is empty';
+            return false;
+        }
+
+        if (empty($this->periods))
+        {
+            $this->error = __METHOD__.': periods are not set';
             return false;
         }
 
