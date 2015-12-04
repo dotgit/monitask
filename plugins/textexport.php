@@ -9,7 +9,7 @@ Class TextExport extends Export
     // export type
     const TYPE_TEXT = 'text';
 
-    public function export(array $items, array $periods, Store $store)
+    public function export(array $items, Store $store)
     {
         $info = rtrim(`uname -n`).'   '.date('Y-m-d H:i:s', $_SERVER['REQUEST_TIME']);
 
