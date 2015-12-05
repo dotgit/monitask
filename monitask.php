@@ -16,18 +16,18 @@ Class Monitask
     const SECTION_EXPORT    = 'export';
     const SECTION_COMMANDS  = 'commands';
 
-	public static $platform;        // "freebsd"
-	public static $architecture;    // "amd64"
+    public static $platform;        // "freebsd"
+    public static $architecture;    // "amd64"
     public static $ini;             // {ini file contents}
-	public static $includes = [];   // {"file-full-name":true, ...}
-	public static $commands = [];   // {"cmd-name":"command", ...}
-	public static $metrics  = [];   // {"metric-name":["time", "value"], ...}
-	public static $items    = [];   // {"block-name":[], ...}
-	public static $store;           // {object of Store}
-	public static $export;          // {object of Export}
+    public static $includes = [];   // {"file-full-name":true, ...}
+    public static $commands = [];   // {"cmd-name":"command", ...}
+    public static $metrics  = [];   // {"metric-name":["time", "value"], ...}
+    public static $items    = [];   // {"block-name":[], ...}
+    public static $store;           // {object of Store}
+    public static $export;          // {object of Export}
 
-	public static function init($config_file)
-	{
+    public static function init($config_file)
+    {
         putenv('LANG=C');
         define('DIR', __DIR__);
 
@@ -35,79 +35,79 @@ Class Monitask
         self::$architecture = strtolower(trim(`uname -p`));
 
         if (self::$ini = self::parseIni($config_file))
-		{
+        {
             // CORE DIRECTIVES
 
             // configure datastore
             $datastore = Lib::arrayExtract(self::$ini, self::SECTION_DATASTORE);
-			if ($ds_type = Lib::arrayExtract($datastore, Store::VAR_TYPE))
-			{
-				switch ($ds_type)
-				{
-				case CsvStore::TYPE_CSV:
-					self::$store = new CsvStore($datastore);
-					break;
-				default:
+            if ($ds_type = Lib::arrayExtract($datastore, Store::VAR_TYPE))
+            {
+                switch ($ds_type)
+                {
+                case CsvStore::TYPE_CSV:
+                    self::$store = new CsvStore($datastore);
+                    break;
+                default:
                     error_log(sprintf(
                         "%s is not an implemented engine, use '%s'",
                         $ds_type,
                         CsvStore::TYPE_CSV
                     ));
-					return false;
-				}
+                    return false;
+                }
 
                 if (! empty(self::$store->error))
                 {
                     error_log(self::$store->error);
                     return false;
                 }
-			}
+            }
 
             // configure export
             $export = Lib::arrayExtract(self::$ini, self::SECTION_EXPORT);
-			if (isset($export[Export::VAR_TYPE]))
-			{
-				$ex_type = Lib::arrayExtract($export, Export::VAR_TYPE);
-				switch ($ex_type)
-				{
-				case TextExport::TYPE_TEXT:
-					self::$export = new TextExport($export);
-					break;
-				case GChartsExport::TYPE_GCHARTS:
-					self::$export = new GChartsExport($export);
-					break;
-				default:
+            if (isset($export[Export::VAR_TYPE]))
+            {
+                $ex_type = Lib::arrayExtract($export, Export::VAR_TYPE);
+                switch ($ex_type)
+                {
+                case TextExport::TYPE_TEXT:
+                    self::$export = new TextExport($export);
+                    break;
+                case GChartsExport::TYPE_GCHARTS:
+                    self::$export = new GChartsExport($export);
+                    break;
+                default:
                     error_log(sprintf(
                         "%s is not an implemented engine, use '%s' or '%s'",
                         $ex_type,
                         TextExport::TYPE_TEXT,
                         GChartsExport::TYPE_GCHARTS
                     ));
-					return false;
-				}
+                    return false;
+                }
 
                 if (! empty(self::$export->error))
                 {
                     error_log(self::$export->error);
                     return false;
                 }
-			}
+            }
 
             // COMMON DIRECTIVES
 
             self::processIni(self::$ini);
 
             return true;
-		}
-		else
+        }
+        else
         {
             error_log("error parsing $config_file");
             return false;
         }
-	}
+    }
 
-	public static function parseIni($config_file)
-	{
+    public static function parseIni($config_file)
+    {
         if ($config_fullname = realpath($config_file)
             and $ini = parse_ini_file($config_fullname, true)
         )
@@ -181,7 +181,7 @@ Class Monitask
         return true;
     }
 
-	public static function createStore()
+    public static function createStore()
     {
         if (empty(self::$store))
         {
@@ -197,7 +197,7 @@ Class Monitask
         }
     }
 
-	public static function outputTemplate()
+    public static function outputTemplate()
     {
         if (empty(self::$export))
         {
@@ -218,7 +218,7 @@ Class Monitask
         }
     }
 
-	public static function collectMetrics()
+    public static function collectMetrics()
     {
         if (empty(self::$store))
         {
@@ -265,9 +265,9 @@ Class Monitask
         }
 
         return true;
-	}
+    }
 
-	public static function exportData()
+    public static function exportData()
     {
         if (empty(self::$export))
         {

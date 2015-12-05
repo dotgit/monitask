@@ -57,8 +57,8 @@ Class GChartsExport extends Export
     const JSON_UPDATE   = 'update';
     const JSON_FROM     = 'from';
 
-	public $export_dir;
-	public $ajax_method = self::A_M_GET;
+    public $export_dir;
+    public $ajax_method = self::A_M_GET;
 
     public function __construct($params)
     {

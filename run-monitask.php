@@ -6,9 +6,9 @@ spl_autoload_register();
 
 // check input params
 if ($argc < 2 or ! in_array($argv[1], ['--datastore', '--template', '--collect', '--export']))
-	die(
+    die(
         'Usage: '.$argv[0].' [--datastore, --template, --collect, --export] [path-to-config.ini]'.PHP_EOL.
-		'where'.PHP_EOL.
+        'where'.PHP_EOL.
         '  --datastore  creates datastore'.PHP_EOL.
         '  --template   outputs a template file'.PHP_EOL.
         '  --collect    collects metrics and updates datastore'.PHP_EOL.

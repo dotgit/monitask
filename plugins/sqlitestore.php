@@ -13,53 +13,53 @@ Class SQLiteStore extends Store
     const FLD_METRIC    = 'metric';
     const FLD_VALUE     = 'value';
 
-	public $filename;
-	public $db;
-	public $statement;
+    public $filename;
+    public $db;
+    public $statement;
 
-	public function __construct($params)
-	{
+    public function __construct($params)
+    {
         if (empty($params[self::VAR_FILENAME]))
             $this->error = __METHOD__.': '.self::VAR_FILENAME.' parameter not set';
         else
-    		$this->filename = realpath($params[self::VAR_FILENAME]);
-	}
+            $this->filename = realpath($params[self::VAR_FILENAME]);
+    }
 
-	public function createStatements()
-	{
+    public function createStatements()
+    {
         $tbl_log = self::TBL_LOG;
         $fld_update = self::FLD_UPDATE;
         $fld_metric = self::FLD_METRIC;
         $fld_value = self::FLD_VALUE;
 
         // primary key not specified, use automatic rowid feature
-		return
+        return
 <<<EOsq
 CREATE TABLE IF NOT EXISTS $tbl_log (
-	$fld_update INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	$fld_metric TEXT NOT NULL,
-	$fld_value TEXT NOT NULL
+    $fld_update INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    $fld_metric TEXT NOT NULL,
+    $fld_value TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS log_idx ON log ($fld_update, $fld_metric);
 EOsq;
-	}
+    }
 
-	public function create()
-	{
-		if (file_exists($this->filename))
-		{
-			$this->error = __METHOD__.": $this->filename datafile already exists";
-			return false;
-		}
+    public function create()
+    {
+        if (file_exists($this->filename))
+        {
+            $this->error = __METHOD__.": $this->filename datafile already exists";
+            return false;
+        }
 
-		if ($this->db = sqlite_open($this->filename, 0666, $this->error))
-			return sqlite_exec($this->db, $this->createStatements(), $this->error);
-		else
-			return false;
-	}
+        if ($this->db = sqlite_open($this->filename, 0666, $this->error))
+            return sqlite_exec($this->db, $this->createStatements(), $this->error);
+        else
+            return false;
+    }
 
-	public function open()
-	{
+    public function open()
+    {
         if (! file_exists($this->filename))
         {
             $this->error = __METHOD__.": $this->filename datafile does not exist";
@@ -73,10 +73,10 @@ EOsq;
         }
 
         return true;
-	}
+    }
 
-	public function insertMetrics($metrics=[])
-	{
+    public function insertMetrics($metrics=[])
+    {
         if (empty($this->db) and ! $this->open())
             return false;
 
@@ -107,5 +107,5 @@ EOsq;
             return sqlite_changes($this->db);
         else
             return false;
-	}
+    }
 }

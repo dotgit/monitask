@@ -14,11 +14,11 @@ Class CsvStore extends Store
     const MODE_READ     = 'r';
     const MODE_WRITE    = 'w';
 
-	public $filename;
-	public $handle;
+    public $filename;
+    public $handle;
 
-	public function __construct(array $params)
-	{
+    public function __construct(array $params)
+    {
         // set datastore filename
         if (! isset($params[self::VAR_FILENAME]))
         {
@@ -30,24 +30,24 @@ Class CsvStore extends Store
         parent::__construct($params);
     }
 
-	public function create()
-	{
-		if (file_exists($this->filename))
-		{
-			$this->error = __METHOD__.": $this->filename datafile already exists";
-			return false;
-		}
-		elseif (touch($this->filename))
-			return true;
-		else
+    public function create()
+    {
+        if (file_exists($this->filename))
         {
-			$this->error = __METHOD__.": error creating $this->filename datafile";
-			return false;
+            $this->error = __METHOD__.": $this->filename datafile already exists";
+            return false;
         }
-	}
+        elseif (touch($this->filename))
+            return true;
+        else
+        {
+            $this->error = __METHOD__.": error creating $this->filename datafile";
+            return false;
+        }
+    }
 
-	public function open($mode=self::MODE_READ)
-	{
+    public function open($mode=self::MODE_READ)
+    {
         if (! file_exists($this->filename))
         {
             $this->error = __METHOD__.": $this->filename datafile does not exist";
@@ -60,10 +60,10 @@ Class CsvStore extends Store
         }
 
         return true;
-	}
+    }
 
-	public function close()
-	{
+    public function close()
+    {
         if (! $this->handle or fclose($this->handle))
         {
             unset($this->handle);
@@ -74,10 +74,10 @@ Class CsvStore extends Store
             $this->error = __METHOD__.": cannot close $this->filename datafile";
             return false;
         }
-	}
+    }
 
     public function load()
-	{
+    {
         if (empty($this->handle) and ! $this->open(self::MODE_READ))
             return false;
 
@@ -119,10 +119,10 @@ Class CsvStore extends Store
         }
 
         return $this->close();
-	}
+    }
 
     public function flush()
-	{
+    {
         if (empty($this->handle) and ! $this->open(self::MODE_WRITE))
             return false;
 
@@ -173,5 +173,5 @@ Class CsvStore extends Store
         }
 
         return $this->close();
-	}
+    }
 }

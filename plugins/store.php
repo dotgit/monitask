@@ -44,14 +44,14 @@ Class Store
     const TYPE_INC      = 'increment';
 
     public $start_time;
-	public $periods             = [];   // {"period-name":"strtotime-pattern", ...}
+    public $periods             = [];   // {"period-name":"strtotime-pattern", ...}
     public $periods_seconds     = [];
     public $metric_period_bins  = [];   // {"metric-name":{"period-name":{"bin-time":[metric values],...},...},...}
-	public $bins_count;
+    public $bins_count;
     public $error;
 
-	public function __construct(array $params)
-	{
+    public function __construct(array $params)
+    {
         // set bins count
         $this->bins_count = ! empty($params[self::VAR_BINS]) ? (int)$params[self::VAR_BINS] : 100;
         if ($this->bins_count < 1)
@@ -93,34 +93,34 @@ Class Store
     /** creates and initializes datastore
      * @return boolean
      */
-	public function create()
-	{
-		return true;
-	}
+    public function create()
+    {
+        return true;
+    }
 
     /** loads metrics from the datastore into $this->metric_period_bins by calculating values per period per bin
      * @return boolean
      */
-	public function load()
-	{
-		return true;
-	}
+    public function load()
+    {
+        return true;
+    }
 
     /** writes metrics from $this->metric_period_bins to the datastore
      * @return boolean
      */
-	public function flush()
-	{
-		return true;
-	}
+    public function flush()
+    {
+        return true;
+    }
 
-	public function periodNextBin($period, $time, array $bin_times=[])
-	{
+    public function periodNextBin($period, $time, array $bin_times=[])
+    {
         $tm = $bin_times ? max($bin_times) : $this->start_time;
         while ($tm < $time)
             $tm += $this->periods_seconds[$period];
         return $tm;
-	}
+    }
 
     public function getMetricData($metric, $period, $type=self::TYPE_VALUE)
     {
@@ -262,7 +262,7 @@ Class Store
      * @return boolean
      */
     public function insertMetrics($time, array $metrics=[])
-	{
+    {
         if (! $this->load())
             return false;
 
@@ -368,5 +368,5 @@ Class Store
 
         // write the structure to the file
         return $this->flush();
-	}
+    }
 }

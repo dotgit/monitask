@@ -28,11 +28,12 @@ Class TextExport extends Export
                 foreach ($bk_items as $item_name=>$item)
                 {
                     $title = Lib::arrayExtract($item, self::VAR_TITLE, $item_name);
-                    $options = Lib::arrayExtract($item, self::VAR_OPTIONS);
+                    Lib::arrayExtract($item, self::VAR_OPTIONS);
 
                     $title_len = 0;
                     $m_titles = [];
                     $m_types = [];
+                    $m_evals = [];
                     foreach ($item as $metric_name=>$metric)
                     {
                         if (is_array($metric))
@@ -47,9 +48,9 @@ Class TextExport extends Export
 
                     echo str_repeat('-', $title_len + 5*7),PHP_EOL;
 
-                    foreach ($periods as $period=>$format)
+                    foreach ($store->periods as $period_name=>$format)
                     {
-                        echo $title, ' - ', $period, PHP_EOL;
+                        echo $title, ' - ', $period_name, PHP_EOL;
                         printf(
                             "%-{$title_len}s %6s %6s %6s %6s %6s%s",
                             '',
@@ -62,7 +63,7 @@ Class TextExport extends Export
                         );
                         foreach ($m_titles as $metric_name=>$m_title)
                         {
-                            $stats = $store->getMetricStats($metric_name, $period, $m_types[$metric_name]);
+                            $stats = $store->getMetricStats($metric_name, $period_name, $m_types[$metric_name]);
                             printf(
                                 "%-{$title_len}s %6s %6s %6s %6s %6s%s",
                                 $m_title,
