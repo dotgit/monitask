@@ -298,16 +298,8 @@ Class GChartsExport extends Export
                 $metric_types = [];
                 $metric_evals = [];
                 $metric_visibles = [];
-                $period_bin_metric_values = [];
-                $period_metric_stats = [];
 
-                // pass 0: fill $metric_defaults
-                $metric_default = [];
-                foreach ($item as $metric_name=>$metric)
-                    if (is_array($metric))
-                        $metric_default[$metric_name] = null;
-
-                // pass 1: fill $period_bin_metric_values
+                // pass 1: prepare $metric_* values
                 foreach ($item as $metric_name=>$metric)
                 {
                     if (is_array($metric))
@@ -317,21 +309,40 @@ Class GChartsExport extends Export
                         $metric_evals[$metric_name] = Lib::arrayExtract($metric, self::METRIC_EVAL);
                         if (! Lib::arrayExtract($metric, self::METRIC_HIDDEN))
                             $metric_visibles[$metric_name] = $metric_titles[$metric_name];
+                    }
+                }
 
+                $period_bin_metric_values = [];
+                $period_metric_stats = [];
+
+                // pass 2: prepare $period_* values
+                foreach ($item as $metric_name=>$metric)
+                {
+                    if (is_array($metric))
+                    {
                         foreach ($period_sanitized as $period_name=>$period_filename)
                         {
-                            foreach ($store->getMetricData($metric_name, $period_name, $metric_types[$metric_name]) as $bin_time=>$value)
+                            foreach ($store->getMetricData(
+                                $metric_name,
+                                $period_name,
+                                $metric_types[$metric_name]
+                            ) as $bin_time=>$value)
                             {
                                 if (empty($period_bin_metric_values[$period_name][$bin_time]))
-                                    $period_bin_metric_values[$period_name][$bin_time] = $metric_default;
+                                    $period_bin_metric_values[$period_name][$bin_time] =
+                                        array_fill_keys(array_keys($metric_types), null);
                                 $period_bin_metric_values[$period_name][$bin_time][$metric_name] = $value;
                             }
-                            $period_metric_stats[$period_name][$metric_name] = $store->getMetricStats($metric_name, $period_name, $metric_types[$metric_name]);
+                            $period_metric_stats[$period_name][$metric_name] = $store->getMetricStats(
+                                $metric_name,
+                                $period_name,
+                                $metric_types[$metric_name]
+                            );
                         }
                     }
                 }
 
-                // pass 2: normalize and output item per period
+                // pass 3: normalize and output item per period
                 foreach ($period_sanitized as $period_name=>$period_filename)
                 {
                     // fill data table
@@ -384,10 +395,10 @@ Class GChartsExport extends Export
                     $lu = null;
                     foreach ($metric_visibles as $metric_name=>$label)
                     {
-                        $st = $period_metric_stats[$period_name][$metric_name];
                         if (isset($metric_evals[$metric_name]))
                         {
                             if (empty($stats_metric_parsed))
+                            {
                                 foreach ($period_metric_stats[$period_name] as $m_name=>$m_stats)
                                 {
                                     $stats_metric_parsed[Store::STAT_FIRST][$m_name] = isset($period_metric_stats[$period_name][$m_name][Store::STAT_FIRST])
@@ -406,6 +417,8 @@ Class GChartsExport extends Export
                                         ? "({$period_metric_stats[$period_name][$m_name][Store::STAT_LAST]})"
                                         : 'null';
                                 }
+                            }
+
                             $eval = "return ({$metric_evals[$metric_name]});";
                             $st = [
                                 Store::STAT_FIRST=>eval(str_replace(
@@ -435,6 +448,9 @@ Class GChartsExport extends Export
                                 )),
                             ];
                         }
+                        else
+                            $st = $period_metric_stats[$period_name][$metric_name];
+
                         $stats[] = [
                             $label,
                             isset($st[Store::STAT_FIRST]) ? Lib::humanFloat($st[Store::STAT_FIRST]) : null,
@@ -443,8 +459,22 @@ Class GChartsExport extends Export
                             isset($st[Store::STAT_MAX]) ? Lib::humanFloat($st[Store::STAT_MAX]) : null,
                             isset($st[Store::STAT_LAST]) ? Lib::humanFloat($st[Store::STAT_LAST]) : null,
                         ];
-                        if (isset($st[Store::STAT_UPDATE]) and empty($lu))
-                            $lu = date('Y-m-d H:i:s', $st[Store::STAT_UPDATE]);
+                        if (empty($lu))
+                        {
+                            if (isset($st[Store::STAT_UPDATE]))
+                                $lu = date('Y-m-d H:i:s', $st[Store::STAT_UPDATE]);
+                            else
+                            {
+                                foreach ($period_metric_stats[$period_name] as $st)
+                                {
+                                    if (isset($st[Store::STAT_UPDATE]))
+                                    {
+                                        $lu = date('Y-m-d H:i:s', $st[Store::STAT_UPDATE]);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     file_put_contents(
