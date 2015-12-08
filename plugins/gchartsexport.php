@@ -301,6 +301,12 @@ Class GChartsExport extends Export
                 $period_bin_metric_values = [];
                 $period_metric_stats = [];
 
+                // pass 0: fill $metric_defaults
+                $metric_default = [];
+                foreach ($item as $metric_name=>$metric)
+                    if (is_array($metric))
+                        $metric_default[$metric_name] = null;
+
                 // pass 1: fill $period_bin_metric_values
                 foreach ($item as $metric_name=>$metric)
                 {
@@ -315,7 +321,11 @@ Class GChartsExport extends Export
                         foreach ($period_sanitized as $period_name=>$period_filename)
                         {
                             foreach ($store->getMetricData($metric_name, $period_name, $metric_types[$metric_name]) as $bin_time=>$value)
+                            {
+                                if (empty($period_bin_metric_values[$period_name][$bin_time]))
+                                    $period_bin_metric_values[$period_name][$bin_time] = $metric_default;
                                 $period_bin_metric_values[$period_name][$bin_time][$metric_name] = $value;
+                            }
                             $period_metric_stats[$period_name][$metric_name] = $store->getMetricStats($metric_name, $period_name, $metric_types[$metric_name]);
                         }
                     }
@@ -348,11 +358,12 @@ Class GChartsExport extends Export
                                     if (empty($metric_parsed))
                                         foreach ($metric_values as $m_name=>$value)
                                             $metric_parsed[$m_name] = isset($value) ? "($value)" : 'null';
-                                    $r[] = $this->gcVal(eval(str_replace(
+                                    $code = str_replace(
                                         array_keys($metric_parsed),
                                         array_values($metric_parsed),
                                         "return ({$metric_evals[$metric_name]});"
-                                    )), self::FMT_NUMERIC);
+                                    );
+                                    $r[] = $this->gcVal(eval($code), self::FMT_NUMERIC);
                                 }
                                 else
                                     $r[] = isset($metric_values[$metric_name])
