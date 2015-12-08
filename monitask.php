@@ -147,7 +147,7 @@ Class Monitask
         // merge commands
         $commands = Lib::arrayExtract($ini, self::SECTION_COMMANDS);
         if ($commands)
-            self::$commands = array_merge_recursive(self::$commands, $commands);
+            self::$commands = array_replace_recursive(self::$commands, $commands);
 
         // get includes
         $includes = Lib::arrayExtract($ini, self::VAR_INCLUDE);
