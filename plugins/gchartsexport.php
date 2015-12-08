@@ -223,7 +223,10 @@ Class GChartsExport extends Export
                     $bk_charts[] = "<div id=\"$id\"></div><div id=\"stats_$id\"></div>";
                     if ($period_name == $first_period)
                         $bk_charts[] = "<div class=\"$collapse_class $item_clean\">";
-                    $packages[strtolower($class)] = true;
+                    if (stripos($class, 'chart'))
+                        $packages['corechart'] = true;
+                    else
+                        $packages[strtolower($class)] = true;
                     $charts[] = "GCharts['$id']=new google.visualization.ChartWrapper(".json_encode([
                         "containerId"=>$id,
                         "chartType"=>$class,

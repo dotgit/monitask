@@ -50,16 +50,21 @@ table.stats th:first-child,table.stats td:first-child{text-align:left;}
 
 <script type="text/javascript" src="//www.google.com/jsapi"></script>
 <script type="text/javascript">
-google.load('visualization', '1', {packages:['corechart']});
+google.load('visualization', '1', <?=$Packages_js?>);
 google.setOnLoadCallback(drawCharts);
 var Blocker=0;
 var GCharts={};
 var Stats=["metric","first","min","avg","max","last"];
 function loadJson(url,fn){
   var XHR=new XMLHttpRequest();
+  incrementBlocker();
   XHR.onreadystatechange=function(){
-    if(XHR.readyState==XMLHttpRequest.DONE && XHR.status==200)
-      fn(JSON.parse(XHR.responseText));
+    if(XHR.readyState==XMLHttpRequest.DONE){
+      if(XHR.status==200)
+        fn(JSON.parse(XHR.responseText));
+      else
+        decrementBlocker();
+    }
   }
   XHR.open('<?=$Ajax_method?>',url);
   XHR.send();
@@ -86,6 +91,17 @@ function redraw(name){
       }
     }
   }
+}
+function getJsonDraw(id){
+  loadJson(
+    id+'.json',
+    function(data){
+      GCharts[id].setDataTable(data.<?=$Json_data?>);
+      GCharts[id].setOption('hAxis.minValue',data.<?=$Json_from?>);
+      GCharts[id].draw();
+      updateStats(id,data.<?=$Json_stats?>,data.<?=$Json_update?>);
+    }
+  );
 }
 function update(){
   for(var i in GCharts)
@@ -131,18 +147,6 @@ function updateStats(id,st,upd){
   if(ot=div.getElementsByTagName('table')[0])
     ot.remove();
   div.appendChild(t);
-}
-function getJsonDraw(id){
-  incrementBlocker();
-  loadJson(
-    id+'.json',
-    function(data){
-      GCharts[id].setDataTable(data.<?=$Json_data?>);
-      GCharts[id].setOption('hAxis.minValue',data.<?=$Json_from?>);
-      GCharts[id].draw();
-      updateStats(id,data.<?=$Json_stats?>,data.<?=$Json_update?>);
-    }
-  );
 }
 function toggleMore(el,cl){
     var div=document.getElementsByClassName(cl)[0];
