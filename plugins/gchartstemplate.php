@@ -50,17 +50,17 @@ table.stats th:first-child,table.stats td:first-child{text-align:left;}
 
 <script type="text/javascript" src="//www.google.com/jsapi"></script>
 <script type="text/javascript">
-google.load('visualization', '1', <?=$Packages_js?>);
-google.setOnLoadCallback(drawCharts);
 var Blocker=0;
 var GCharts={};
 var Stats=["metric","first","min","avg","max","last"];
+google.load('visualization', '1', <?=$Packages_js?>);
+google.setOnLoadCallback(drawCharts);
 function loadJson(url,fn){
   var XHR=new XMLHttpRequest();
   incrementBlocker();
   XHR.onreadystatechange=function(){
-    if(XHR.readyState==XMLHttpRequest.DONE){
-      if(XHR.status==200)
+    if(XHR.readyState===XMLHttpRequest.DONE){
+      if(XHR.status===200)
         fn(JSON.parse(XHR.responseText));
       else
         decrementBlocker();
