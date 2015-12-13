@@ -137,7 +137,7 @@ Class Store
 
             case self::TYPE_RATE:
                 foreach ($this->metric_period_bins[$metric][$period] as $bin_tm=>$bin)
-                    $data[$bin_tm] = $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] - $bin[self::BIN_FIRST_TM_INC]);
+                    $data[$bin_tm] = $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] + $bin[self::BIN_FIRST_TM_INC]);
                 break;
 
             case self::TYPE_INC:
@@ -194,13 +194,13 @@ Class Store
                 {
                     $bin = $metric_period[$bin_tm];
 
-                    // increment count value
-                    $cnt += $bin[self::BIN_COUNT];
-
                     // collect min, max, sum
                     switch ($type)
                     {
                     case self::TYPE_VALUE:
+                        // increment count value
+                        $cnt += $bin[self::BIN_COUNT];
+
                         // set min value
                         if (! isset($stats[self::STAT_MIN])
                             or $bin[self::BIN_MIN_VALUE] < $stats[self::STAT_MIN]
@@ -216,6 +216,9 @@ Class Store
                         break;
 
                     case self::TYPE_RATE:
+                        // increment count value
+                        $cnt += $bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] + $bin[self::BIN_FIRST_TM_INC];
+
                         // set min value
                         if (! isset($stats[self::STAT_MIN])
                             or $bin[self::BIN_MIN_INC]/$bin[self::BIN_MIN_TM_INC] < $stats[self::STAT_MIN]
@@ -227,10 +230,13 @@ Class Store
                         )
                             $stats[self::STAT_MAX] = $bin[self::BIN_MAX_INC]/$bin[self::BIN_MAX_TM_INC];
                         // collect sum
-                        $sum += $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] - $bin[self::BIN_FIRST_TM_INC]);
+                        $sum += $bin[self::BIN_SUM_INC];
                         break;
 
                     case self::TYPE_INC:
+                        // increment count value
+                        $cnt += $bin[self::BIN_COUNT];
+
                         // set min value
                         if (! isset($stats[self::STAT_MIN])
                             or $bin[self::BIN_MIN_INC] < $stats[self::STAT_MIN]
