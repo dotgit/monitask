@@ -260,7 +260,7 @@ Class GChartsExport extends Export
         $Ajax_method = $this->ajax_method;
 
         // vars for template
-        $Hostname = 'server.name';//htmlspecialchars(rtrim(`hostname`));
+        $Hostname = htmlspecialchars(rtrim(`hostname`));
         $Toc_html = implode(PHP_EOL, $toc);
         $Blocks_html = implode(PHP_EOL, $blocks);
 
