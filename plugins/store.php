@@ -137,7 +137,7 @@ Class Store
 
             case self::TYPE_RATE:
                 foreach ($this->metric_period_bins[$metric][$period] as $bin_tm=>$bin)
-                    $data[$bin_tm] = $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] + $bin[self::BIN_FIRST_TM_INC]);
+                    $data[$bin_tm] = $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] - $bin[self::BIN_FIRST_TM_INC]);
                 break;
 
             case self::TYPE_INC:
@@ -227,7 +227,7 @@ Class Store
                         )
                             $stats[self::STAT_MAX] = $bin[self::BIN_MAX_INC]/$bin[self::BIN_MAX_TM_INC];
                         // collect sum
-                        $sum += $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] + $bin[self::BIN_FIRST_TM_INC]);
+                        $sum += $bin[self::BIN_SUM_INC]/($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] - $bin[self::BIN_FIRST_TM_INC]);
                         break;
 
                     case self::TYPE_INC:
