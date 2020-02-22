@@ -296,6 +296,8 @@ Class GChartsExport extends Export
                 Lib::arrayExtract($item, self::VAR_CLASS, 'AreaChart');
                 Lib::arrayExtract($item, self::VAR_TITLE, $item_name);
                 Lib::arrayExtract($item, self::VAR_OPTIONS, []);
+                $base = Lib::arrayExtract($item, self::VAR_BASE, 1);
+                Lib::arrayExtract($item, self::VAR_CRIT_VALUE);
 
                 $metric_titles = [];
                 $metric_types = [];
@@ -377,11 +379,11 @@ Class GChartsExport extends Export
                                         array_values($metric_parsed),
                                         "return ({$metric_evals[$metric_name]});"
                                     );
-                                    $r[] = $this->gcVal(eval($code), self::FMT_NUMERIC);
+                                    $r[] = $this->gcVal(eval($code) * $base, self::FMT_NUMERIC);
                                 }
                                 else
                                     $r[] = isset($metric_values[$metric_name])
-                                        ? $this->gcVal($metric_values[$metric_name], self::FMT_NUMERIC)
+                                        ? $this->gcVal($metric_values[$metric_name] * $base, self::FMT_NUMERIC)
                                         : null;
                             }
                             $data[] = $r;
@@ -453,6 +455,9 @@ Class GChartsExport extends Export
                         }
                         else
                             $st = $period_metric_stats[$period_name][$metric_name];
+
+                        if ($base != 1)
+                            array_walk($st, function(&$v, $k, $base){$v *= $base;}, $base);
 
                         $stats[] = [
                             $label,
