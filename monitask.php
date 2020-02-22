@@ -235,21 +235,24 @@ Class Monitask
         foreach (self::$commands as $key=>$cmd)
         {
             // run commands
-            $errorlevel = 0;
-            $output = [];
-            exec($cmd, $output, $errorlevel);
-            if ($errorlevel)
-                $errors[] = "error executing $key: $cmd";
-            elseif (empty($output))
-                ;
-            elseif ($output and preg_match_all('/^(\S+)\s+(.+)$/m', implode(PHP_EOL, $output), $m))
+            if ($cmd)
             {
-                // collect metrics
-                foreach ($m[1] as $k=>$v)
-                    self::$metrics[$v] = rtrim($m[2][$k]);
+                $errorlevel = 0;
+                $output = [];
+                exec($cmd, $output, $errorlevel);
+                if ($errorlevel)
+                    $errors[] = "error executing $key: $cmd";
+                elseif (empty($output))
+                    ;
+                elseif ($output and preg_match_all('/^(\S+)\s+(.+)$/m', implode(PHP_EOL, $output), $m))
+                {
+                    // collect metrics
+                    foreach ($m[1] as $k=>$v)
+                        self::$metrics[$v] = rtrim($m[2][$k]);
+                }
+                else
+                    $errors[] = "unformatted output from $key: $cmd";
             }
-            else
-                $errors[] = "unformatted output from $key: $cmd";
         }
 
         // store metrics
