@@ -457,7 +457,10 @@ Class GChartsExport extends Export
                             $st = $period_metric_stats[$period_name][$metric_name];
 
                         if ($base != 1)
-                            array_walk($st, function(&$v, $k, $base){$v *= $base;}, $base);
+                            array_walk($st, function(&$v, $k, $base){
+                                if (in_array($k, [Store::STAT_FIRST, Store::STAT_MIN, Store::STAT_AVG, Store::STAT_MAX, Store::STAT_LAST]))
+                                    $v *= $base;
+                            }, $base);
 
                         $stats[] = [
                             $label,
