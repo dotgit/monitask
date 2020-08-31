@@ -132,7 +132,7 @@ Class Store
             {
             case self::TYPE_VALUE:
                 foreach ($this->metric_period_bins[$metric][$period] as $bin_tm=>$bin)
-                    $data[$bin_tm] = $bin[self::BIN_SUM_VALUE]/$bin[self::BIN_COUNT];
+                    $data[$bin_tm] = $bin[self::BIN_COUNT] ? ($bin[self::BIN_SUM_VALUE]/$bin[self::BIN_COUNT]) : null;
                 break;
 
             case self::TYPE_RATE:
@@ -142,7 +142,7 @@ Class Store
 
             case self::TYPE_INC:
                 foreach ($this->metric_period_bins[$metric][$period] as $bin_tm=>$bin)
-                    $data[$bin_tm] = $bin[self::BIN_SUM_INC]/$bin[self::BIN_COUNT];
+                    $data[$bin_tm] = $bin[self::BIN_COUNT] ? ($bin[self::BIN_SUM_INC]/$bin[self::BIN_COUNT]) : null;
                 break;
             }
         }
