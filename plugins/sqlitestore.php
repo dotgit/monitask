@@ -2,29 +2,38 @@
 
 namespace Plugins;
 
-Class SQLiteStore extends Store
+class SQLiteStore extends Store
 {
     // datastore section of ini file
     const VAR_FILENAME = 'filename';
 
     // database description
-    const TBL_LOG       = 'log';
-    const FLD_UPDATE    = 'update_time';
-    const FLD_METRIC    = 'metric';
-    const FLD_VALUE     = 'value';
+    const TBL_LOG = 'log';
+    const FLD_UPDATE = 'update_time';
+    const FLD_METRIC = 'metric';
+    const FLD_VALUE = 'value';
 
     public $filename;
     public $db;
     public $statement;
 
+    /**
+     * @param array $params
+     */
     public function __construct($params)
     {
-        if (empty($params[self::VAR_FILENAME]))
-            $this->error = __METHOD__.': '.self::VAR_FILENAME.' parameter not set';
-        else
+        if (empty($params[self::VAR_FILENAME])) {
+            $this->error = __METHOD__ . ': ' . self::VAR_FILENAME . ' parameter not set';
+        } else {
             $this->filename = realpath($params[self::VAR_FILENAME]);
+        }
+
+        parent::__construct($params);
     }
 
+    /**
+     * @return string
+     */
     public function createStatements()
     {
         $tbl_log = self::TBL_LOG;
@@ -33,8 +42,7 @@ Class SQLiteStore extends Store
         $fld_value = self::FLD_VALUE;
 
         // primary key not specified, use automatic rowid feature
-        return
-<<<EOsq
+        return <<<EOsq
 CREATE TABLE IF NOT EXISTS $tbl_log (
     $fld_update INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
     $fld_metric TEXT NOT NULL,
@@ -44,58 +52,66 @@ CREATE INDEX IF NOT EXISTS log_idx ON log ($fld_update, $fld_metric);
 EOsq;
     }
 
+    /**
+     * @return bool
+     */
     public function create()
     {
-        if (file_exists($this->filename))
-        {
-            $this->error = __METHOD__.": $this->filename datafile already exists";
+        if (file_exists($this->filename)) {
+            $this->error = __METHOD__ . ": $this->filename datafile already exists";
             return false;
         }
 
-        if ($this->db = sqlite_open($this->filename, 0666, $this->error))
+        if ($this->db = sqlite_open($this->filename, 0666, $this->error)) {
             return sqlite_exec($this->db, $this->createStatements(), $this->error);
-        else
+        } else {
             return false;
+        }
     }
 
+    /**
+     * @return bool
+     */
     public function open()
     {
-        if (! file_exists($this->filename))
-        {
-            $this->error = __METHOD__.": $this->filename datafile does not exist";
+        if (!file_exists($this->filename)) {
+            $this->error = __METHOD__ . ": $this->filename datafile does not exist";
             return false;
         }
 
-        if (! $this->db = sqlite_open($this->filename, 0666, $this->error))
-        {
-            $this->error = __METHOD__.": cannot open $this->filename datafile";
+        if (!$this->db = sqlite_open($this->filename, 0666, $this->error)) {
+            $this->error = __METHOD__ . ": cannot open $this->filename datafile";
             return false;
         }
 
         return true;
     }
 
-    public function insertMetrics($metrics=[])
+    /**
+     * @inheritDoc
+     */
+    public function insertMetrics($time, array $metrics = [])
     {
-        if (empty($this->db) and ! $this->open())
+        if (empty($this->db) and !$this->open()) {
             return false;
+        }
 
         $ins = [];
-        if ($metrics and is_array($metrics))
-        {
-            foreach ((array)$metrics as $metric=>$arr)
+        if ($metrics and is_array($metrics)) {
+            foreach ($metrics as $metric => $arr) {
                 $ins[] = sprintf(
                     "(%u,'%s','%s')",
                     $arr[0],
                     sqlite_escape_string($metric),
                     sqlite_escape_string($arr[1])
                 );
+            }
         }
 
         if (sqlite_exec(
             $this->db,
             sprintf(
-                'insert into %s (%s, %s, %s) values %s',
+                'INSERT INTO %s (%s, %s, %s) VALUES %s',
                 self::TBL_LOG,
                 self::FLD_UPDATE,
                 self::FLD_METRIC,
@@ -103,9 +119,10 @@ EOsq;
                 implode(',', $ins)
             ),
             $this->error
-        ))
+        )) {
             return sqlite_changes($this->db);
-        else
+        } else {
             return false;
+        }
     }
 }

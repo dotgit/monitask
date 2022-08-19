@@ -5,7 +5,7 @@ the load when configuring, collecting and displaying system health metrics.
 
 ## Simple
 
-All configuration is done via .INI files. Commands sections provide shell commands that allow to collect system metrics.
+All configuration is done via `.ini` files. `commands` sections provide shell commands that collect system metrics.
 Display sections explain how to interpret metrics and display them on graphs.
 
 ## Compact
@@ -23,7 +23,7 @@ metrics data on virtually any support, like in plain-text file, a compressed fil
 Results may be output in text mode, on an HTML page with interactive graphs or in any other form.
 
 Since platforms and architectures may vary, default commands and configurations may be rewritten by platform-specific
-.INI files.
+`.ini` files.
 
 ## Documentation
 

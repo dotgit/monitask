@@ -1,38 +1,50 @@
 <?php
 
-Class Lib
+class Lib
 {
     const CHARSET = 'UTF-8';
 
+    /**
+     * @param string $string
+     * @return string
+     */
     public static function sanitizeFilename($string)
     {
-        return \trim(\preg_replace(
-            '/\\W+/',
-            '-',
-            \mb_strtolower(trim($string), self::CHARSET)
-        ), '-');
+        return trim(
+            preg_replace(
+                '/\\W+/',
+                '-',
+                mb_strtolower(trim($string), self::CHARSET)
+            ),
+            '-'
+        );
     }
 
-    public static function arrayExtract(&$arr, $index, $default=null)
+    /**
+     * @param mixed $arr
+     * @param string $index
+     * @param $default
+     * @return false|mixed|null
+     */
+    public static function arrayExtract(&$arr, $index, $default = null)
     {
-        if (is_array($arr))
-        {
-            if (array_key_exists($index, $arr))
-            {
+        if (is_array($arr)) {
+            if (array_key_exists($index, $arr)) {
                 $res = $arr[$index];
                 unset($arr[$index]);
                 return $res;
-            }
-            else
+            } else {
                 return $default;
-        }
-        else
+            }
+        } else {
             return false;
+        }
     }
 
-    /** returns human-readable amount rounded to 3 meaningful numbers with appropriate ISO suffix
+    /**
+     * return human-readable amount rounded to 3 meaningful numbers with appropriate ISO suffix
      * (K=kilo, M=mega, G=giga, T=tera, P=peta)
-     * @param int $amount   amount to convert
+     * @param int $amount amount to convert
      * @return string value like '150', '8.37K', '15M', '374G'
      * @assert(20) == '20'
      * @assert(999) == '999'
@@ -48,67 +60,69 @@ Class Lib
      */
     public static function humanFloat($amount)
     {
-        if (! isset($amount))
+        if (!isset($amount)) {
             return null;
+        }
 
-        $amount_abs = \abs($amount);
-        if ($amount_abs >= 1000000000000000)
+        $amount_abs = abs($amount);
+        if ($amount_abs >= 1000000000000000) {
             return ($amount_abs >= 100000000000000000
-                ? \round($amount/ 1000000000000000)
-                : ($amount_abs >= 10000000000000000
-                    ? \round($amount/1000000000000000, 1)
-                    : \round($amount/1000000000000000, 2)
-                )
-            ).'P';
-        elseif ($amount_abs >= 1000000000000)
+                    ? round($amount / 1000000000000000)
+                    : ($amount_abs >= 10000000000000000
+                        ? round($amount / 1000000000000000, 1)
+                        : round($amount / 1000000000000000, 2)
+                    )
+                ) . 'P';
+        } elseif ($amount_abs >= 1000000000000) {
             return ($amount_abs >= 100000000000000
-                ? \round($amount/1000000000000)
-                : ($amount_abs >= 10000000000000
-                    ? \round($amount/1000000000000, 1)
-                    : \round($amount/1000000000000, 2)
-                )
-            ).'T';
-        elseif ($amount_abs >= 1000000000)
+                    ? round($amount / 1000000000000)
+                    : ($amount_abs >= 10000000000000
+                        ? round($amount / 1000000000000, 1)
+                        : round($amount / 1000000000000, 2)
+                    )
+                ) . 'T';
+        } elseif ($amount_abs >= 1000000000) {
             return ($amount_abs >= 100000000000
-                ? \round($amount/1000000000)
-                : ($amount_abs >= 10000000000
-                    ? \round($amount/1000000000, 1)
-                    : \round($amount/1000000000, 2)
-                )
-            ).'G';
-        elseif ($amount_abs >= 1000000)
+                    ? round($amount / 1000000000)
+                    : ($amount_abs >= 10000000000
+                        ? round($amount / 1000000000, 1)
+                        : round($amount / 1000000000, 2)
+                    )
+                ) . 'G';
+        } elseif ($amount_abs >= 1000000) {
             return ($amount_abs >= 100000000
-                ? \round($amount/1000000)
-                : ($amount_abs >= 10000000
-                    ? \round($amount/1000000, 1)
-                    : \round($amount/1000000, 2)
-                )
-            ).'M';
-        elseif ($amount_abs >= 1000)
+                    ? round($amount / 1000000)
+                    : ($amount_abs >= 10000000
+                        ? round($amount / 1000000, 1)
+                        : round($amount / 1000000, 2)
+                    )
+                ) . 'M';
+        } elseif ($amount_abs >= 1000) {
             return ($amount_abs >= 100000
-                ? \round($amount/1000)
-                : ($amount_abs >= 10000
-                    ? \round($amount/1000, 1)
-                    : \round($amount/1000, 2)
-                )
-            ).'K';
-        elseif ($amount_abs >= 1)
+                    ? round($amount / 1000)
+                    : ($amount_abs >= 10000
+                        ? round($amount / 1000, 1)
+                        : round($amount / 1000, 2)
+                    )
+                ) . 'K';
+        } elseif ($amount_abs >= 1) {
             return $amount_abs >= 100
-                ? \round($amount)
+                ? round($amount)
                 : ($amount_abs >= 10
-                    ? \round($amount, 1)
-                    : \round($amount, 2)
+                    ? round($amount, 1)
+                    : round($amount, 2)
                 );
-        elseif ($amount_abs >= 0.001)
-            return \strlen($t = \round($amount_abs, 3)) < 5
-                ? \round($amount, 3)
-                : \str_replace('0.', '.', \round($amount, 3));
-        elseif ($amount_abs > 0)
+        } elseif ($amount_abs >= 0.001) {
+            return strlen(round($amount_abs, 3)) < 5
+                ? round($amount, 3)
+                : str_replace('0.', '.', round($amount, 3));
+        } elseif ($amount_abs > 0) {
             return $amount > 0
                 ? '+0'
                 : '-0';
-        else
+        } else {
             return 0;
+        }
     }
 
 }
