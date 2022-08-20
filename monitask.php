@@ -23,8 +23,10 @@ class Monitask
     public static $commands = [];   // {"cmd-name":"command", ...}
     public static $metrics = [];    // {"metric-name":["time", "value"], ...}
     public static $items = [];      // {"block-name":[], ...}
-    public static $store;           // {object of Store}
-    public static $export;          // {object of Export}
+    /** @var Store */
+    public static $store;
+    /** @var Export */
+    public static $export;
 
     /**
      * @param string $config_file

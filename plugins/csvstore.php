@@ -133,10 +133,6 @@ class CsvStore extends Store
      */
     public function flush()
     {
-        if (empty($this->handle) and !$this->open(self::MODE_WRITE)) {
-            return false;
-        }
-
         if (empty($this->metric_period_bins)) {
             $this->error = __METHOD__ . ': datastore is empty';
             return false;
@@ -144,6 +140,17 @@ class CsvStore extends Store
 
         if (empty($this->periods)) {
             $this->error = __METHOD__ . ': periods are not set';
+            return false;
+        }
+
+        if (empty($this->handle) and !$this->open(self::MODE_WRITE)) {
+            $this->error = sprintf('%s: cannot open datafile %s for writing', __METHOD__, $this->filename);
+            return false;
+        }
+
+        if (!flock($this->handle, LOCK_EX)) {
+            $this->error = sprintf('%s: cannot set exclusive lock on datafile %s', __METHOD__, $this->filename);
+            $this->close();
             return false;
         }
 
@@ -175,8 +182,12 @@ class CsvStore extends Store
                 }
             }
         }
+
+        flock($this->handle, LOCK_UN); // remove exclusive lock
+
         if ($errors) {
             $this->error = implode(PHP_EOL, $errors);
+            $this->close();
             return false;
         }
 
