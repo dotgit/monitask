@@ -94,6 +94,13 @@ class CsvStore extends Store
                 continue;
             }
 
+            // unset non-numeric values in the line except 2 first values
+            for ($i = 2; $i <= 19; ++$i) {
+                if (!is_numeric($line[$i])) {
+                    $line[$i] = null;
+                }
+            }
+
             list(
                 $metric, $period, $bin_tm,
                 $first_time, $first_tm_inc, $first_value, $first_inc,
@@ -103,6 +110,11 @@ class CsvStore extends Store
                 $sum_value, $sum_inc,
                 $cnt
                 ) = $line;
+
+            // ignore line if unknown period or undefined bin timestamp
+            if (!isset($this->periods[$period]) or empty($bin_tm)) {
+                continue;
+            }
 
             $this->metric_period_bins[$metric][$period][$bin_tm] = [
                 self::BIN_FIRST_TIME => $first_time,

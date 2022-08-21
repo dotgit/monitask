@@ -172,8 +172,15 @@ class Store
 
                 case self::TYPE_RATE:
                     foreach ($this->metric_period_bins[$metric][$period] as $bin_tm => $bin) {
-                        $data[$bin_tm] = $bin[self::BIN_SUM_INC] /
-                            ($bin[self::BIN_LAST_TIME] - $bin[self::BIN_FIRST_TIME] + $bin[self::BIN_FIRST_TM_INC]);
+                        $data[$bin_tm] = ($bin[self::BIN_LAST_TIME]
+                            - $bin[self::BIN_FIRST_TIME]
+                            + $bin[self::BIN_FIRST_TM_INC]
+                        )
+                            ? $bin[self::BIN_SUM_INC] / ($bin[self::BIN_LAST_TIME]
+                                - $bin[self::BIN_FIRST_TIME]
+                                + $bin[self::BIN_FIRST_TM_INC]
+                            )
+                            : null;
                     }
                     break;
 
@@ -211,8 +218,8 @@ class Store
             $metric_period = $this->metric_period_bins[$metric][$period];
             if ($bins = array_keys($metric_period)) {
                 // set first and last values
-                $first_bin = $bins[0];
-                $last_bin = $bins[count($bins) - 1];
+                $first_bin = reset($bins);
+                $last_bin = end($bins);
                 switch ($type) {
                     case self::TYPE_VALUE:
                         $stats[self::STAT_FIRST] = $metric_period[$first_bin][self::BIN_FIRST_VALUE];
