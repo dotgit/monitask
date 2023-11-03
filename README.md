@@ -27,6 +27,6 @@ Since platforms and architectures may vary, default commands and configurations 
 
 ## Documentation
 
-For installation and configuration instructions please see our wiki [documentation].
+For installation and configuration instructions, please see our wiki [documentation].
 
 [documentation]: https://github.com/dotgit/monitask/wiki/

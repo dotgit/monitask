@@ -126,19 +126,17 @@ class GChartsExport extends Export
      * @param string $format
      * @return array|string|null
      */
-    public function gcVal($value, $format = self::FMT_NUMERIC)
+    public function gcVal($value, $format = 'base10')
     {
         if (!isset($value)) {
             return null;
         }
 
-        switch ($format) {
-            case self::FMT_NUMERIC:
+        switch ($format ?: 'base10') {
+            case 'base10':
                 return ['v' => round($value, 6), 'f' => (string)Lib::humanFloat($value)];
-            case self::FMT_PCT:
-                return ['v' => round($value, 6), 'f' => Lib::humanFloat($value * 100) . '%'];
-            case self::FMT_TIMESTAMP:
-                return $this->gcDateTime($value);
+            case 'base2':
+                return ['v' => round($value, 6), 'f' => (string)Lib::shortFloat($value)];
             default:
                 return $value;
         }
@@ -232,12 +230,14 @@ class GChartsExport extends Export
                     PHP_EOL
                 );
                 $bk_charts[] = sprintf(
-                    '<p class="lead" id="ref_%s">
+<<<'HTML'
+<p class="lead" id="ref_%s">
   <button class="pull-right btn btn-sm btn-link" onclick="toggleMore(this,\'%s\')">%s</button>
   %s
 </p>
 <div class="panel panel-default">
-  <div class="panel-body">',
+  <div class="panel-body">
+HTML,
                     Lib::sanitizeFilename($title),
                     $item_clean,
                     'More...',
@@ -269,8 +269,11 @@ class GChartsExport extends Export
                             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
                         ) . ");";
                 }
-                $bk_charts[] = '  </div></div>
-</div>';
+                $bk_charts[] =
+<<<'HTML'
+  </div></div>
+</div>
+HTML;
             }
             $toc[] = sprintf(
                 '<div class="list-group"><a class="list-group-item" href="#ref_%s"><b>%s</b></a>%s</div>',
@@ -335,6 +338,7 @@ class GChartsExport extends Export
 
                 $metric_titles = [];
                 $metric_types = [];
+                $metric_formats = [];
                 $metric_evals = [];
                 $metric_visibles = [];
 
@@ -343,6 +347,7 @@ class GChartsExport extends Export
                     if (is_array($metric)) {
                         $metric_titles[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TITLE, $metric_name);
                         $metric_types[$metric_name] = Lib::arrayExtract($metric, self::METRIC_TYPE, Store::TYPE_VALUE);
+                        $metric_formats[$metric_name] = Lib::arrayExtract($metric, self::METRIC_FORMAT, 'base10');
                         $metric_evals[$metric_name] = Lib::arrayExtract($metric, self::METRIC_EVAL);
                         if (!Lib::arrayExtract($metric, self::METRIC_HIDDEN)) {
                             $metric_visibles[$metric_name] = $metric_titles[$metric_name];
@@ -409,10 +414,10 @@ class GChartsExport extends Export
                                         array_values($metric_parsed),
                                         "return ($metric_evals[$metric_name]);"
                                     );
-                                    $r[] = $this->gcVal(eval($code) * $base);
+                                    $r[] = $this->gcVal(eval($code) * $base, $metric_formats[$metric_name]);
                                 } else {
                                     $r[] = isset($metric_values[$metric_name])
-                                        ? $this->gcVal($metric_values[$metric_name] * $base)
+                                        ? $this->gcVal($metric_values[$metric_name] * $base, $metric_formats[$metric_name])
                                         : null;
                                 }
                             }
@@ -505,11 +510,36 @@ class GChartsExport extends Export
 
                         $stats[] = [
                             $label,
-                            isset($st[Store::STAT_FIRST]) ? Lib::humanFloat($st[Store::STAT_FIRST]) : null,
-                            isset($st[Store::STAT_MIN]) ? Lib::humanFloat($st[Store::STAT_MIN]) : null,
-                            isset($st[Store::STAT_AVG]) ? Lib::humanFloat($st[Store::STAT_AVG]) : null,
-                            isset($st[Store::STAT_MAX]) ? Lib::humanFloat($st[Store::STAT_MAX]) : null,
-                            isset($st[Store::STAT_LAST]) ? Lib::humanFloat($st[Store::STAT_LAST]) : null,
+                            isset($st[Store::STAT_FIRST])
+                                ? ($metric_formats[$metric_name] == 'base2'
+                                    ? Lib::shortFloat($st[Store::STAT_FIRST])
+                                    : Lib::humanFloat($st[Store::STAT_FIRST])
+                                )
+                                : null,
+                            isset($st[Store::STAT_MIN])
+                                ? ($metric_formats[$metric_name] == 'base2'
+                                    ? Lib::shortFloat($st[Store::STAT_MIN])
+                                    : Lib::humanFloat($st[Store::STAT_MIN])
+                                )
+                                : null,
+                            isset($st[Store::STAT_AVG])
+                                ? ($metric_formats[$metric_name] == 'base2'
+                                    ? Lib::shortFloat($st[Store::STAT_AVG])
+                                    : Lib::humanFloat($st[Store::STAT_AVG])
+                                )
+                                : null,
+                            isset($st[Store::STAT_MAX])
+                                ? ($metric_formats[$metric_name] == 'base2'
+                                    ? Lib::shortFloat($st[Store::STAT_MAX])
+                                    : Lib::humanFloat($st[Store::STAT_MAX])
+                                )
+                                : null,
+                            isset($st[Store::STAT_LAST])
+                                ? ($metric_formats[$metric_name] == 'base2'
+                                    ? Lib::shortFloat($st[Store::STAT_MAX])
+                                    : Lib::humanFloat($st[Store::STAT_MAX])
+                                )
+                                : null,
                         ];
                         if (empty($lu)) {
                             if (isset($st[Store::STAT_UPDATE])) {

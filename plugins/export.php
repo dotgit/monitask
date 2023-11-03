@@ -14,6 +14,7 @@ class Export
     // metric description
     const METRIC_TITLE = 'title';
     const METRIC_TYPE = 'type';
+    const METRIC_FORMAT = 'format';
     const METRIC_EVAL = 'eval';
     const METRIC_HIDDEN = 'hidden';
 
