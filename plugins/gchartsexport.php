@@ -224,7 +224,7 @@ class GChartsExport extends Export
                     }
                 }
                 $bk_toc[] = sprintf(
-                    '<a class="list-group-item" href="#ref_%s">%s</a>%s',
+                    '<li><a href="#ref_%s">%s</a></li>%s',
                     Lib::sanitizeFilename($title),
                     htmlspecialchars($title),
                     PHP_EOL
@@ -232,7 +232,7 @@ class GChartsExport extends Export
                 $bk_charts[] = sprintf(
 <<<'HTML'
 <p class="lead" id="ref_%s">
-  <button class="pull-right btn btn-sm btn-link" onclick="toggleMore(this,\'%s\')">%s</button>
+  <button class="pull-right btn btn-sm btn-link" onclick="toggleMore(this,'%s')">%s</button>
   %s
 </p>
 <div class="panel panel-default">
@@ -276,7 +276,7 @@ HTML,
 HTML;
             }
             $toc[] = sprintf(
-                '<div class="list-group"><a class="list-group-item" href="#ref_%s"><b>%s</b></a>%s</div>',
+                '<li><a href="#ref_%s"><b>%s</b></a></li>%s',
                 Lib::sanitizeFilename($block),
                 htmlspecialchars($block),
                 implode('', $bk_toc)
