@@ -85,11 +85,7 @@ class GChartsExport extends Export
      */
     public function gcDateTime($time)
     {
-        return str_replace(
-            'MON',
-            date('m', $time) - 1,
-            'Date(' . date('Y,\M\O\N,d,H,i,s', $time) . ')'
-        );
+        return sprintf('Date(%u000)', $time);
     }
 
     /**
@@ -543,11 +539,11 @@ HTML;
                         ];
                         if (empty($lu)) {
                             if (isset($st[Store::STAT_UPDATE])) {
-                                $lu = date('Y-m-d H:i:s', $st[Store::STAT_UPDATE]);
+                                $lu = gcDateTime($st[Store::STAT_UPDATE]);
                             } else {
                                 foreach ($period_metric_stats[$period_name] as $st) {
                                     if (isset($st[Store::STAT_UPDATE])) {
-                                        $lu = date('Y-m-d H:i:s', $st[Store::STAT_UPDATE]);
+                                        $lu = gcDateTime($st[Store::STAT_UPDATE]);
                                         break;
                                     }
                                 }
@@ -567,7 +563,7 @@ HTML;
                             [
                                 self::JSON_DATA => $data,
                                 self::JSON_STATS => $stats,
-                                self::JSON_UPDATE => $lu,
+                                self::JSON_UPDATE => "(new $lu).toLocaleString(undefined,{dateStyle:'short',timeStyle:'medium'})",
                                 self::JSON_FROM => $this->gcDateTime(
                                     $period_times[$period_name] + ($store->periods_seconds[$period_name] << 1)
                                 ),

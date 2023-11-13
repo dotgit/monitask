@@ -53,13 +53,14 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-<script type="text/javascript" src="//www.google.com/jsapi"></script>
-<script type="text/javascript">
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
     var Blocker=0;
     var GCharts={};
     var Stats=["metric","first","min","avg","max","last"];
-    google.load('visualization', '1', <?=$Packages_js?>);
-    google.setOnLoadCallback(drawCharts);
+    google.charts.load('current', <?=$Packages_js?>);
+    google.charts.setOnLoadCallback(drawCharts);
+
     function loadJson(url,fn){
         var XHR=new XMLHttpRequest();
         incrementBlocker();
@@ -144,7 +145,7 @@
         r.appendChild(d);
         d=document.createElement('td');
         if(upd!==null)
-            d.appendChild(document.createTextNode(upd));
+            d.appendChild(document.createTextNode(eval(upd)));
         d.setAttribute('colspan',Stats.length);
         r.appendChild(d);
         F.appendChild(r);
