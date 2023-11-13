@@ -539,11 +539,11 @@ HTML;
                         ];
                         if (empty($lu)) {
                             if (isset($st[Store::STAT_UPDATE])) {
-                                $lu = gcDateTime($st[Store::STAT_UPDATE]);
+                                $lu = $this->gcDateTime($st[Store::STAT_UPDATE]);
                             } else {
                                 foreach ($period_metric_stats[$period_name] as $st) {
                                     if (isset($st[Store::STAT_UPDATE])) {
-                                        $lu = gcDateTime($st[Store::STAT_UPDATE]);
+                                        $lu = $this->gcDateTime($st[Store::STAT_UPDATE]);
                                         break;
                                     }
                                 }
