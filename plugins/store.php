@@ -349,7 +349,9 @@ class Store
                 if (isset($this->metric_period_bins[$metric][$period_name][$bin_id])) {
                     $bin = &$this->metric_period_bins[$metric][$period_name][$bin_id];
                     $time_inc = $time - $bin[self::BIN_LAST_TIME];
-                    $value_inc = $value - $bin[self::BIN_LAST_VALUE];
+                    $value_inc = $value < $bin[self::BIN_LAST_VALUE]
+                        ? $value
+                        : ($value - $bin[self::BIN_LAST_VALUE]);
 
                     // only update if time changed
                     if ($time_inc) {
@@ -382,7 +384,9 @@ class Store
                     }
                 } else {
                     $value_inc = isset($bin_prev_id)
-                        ? $value - $this->metric_period_bins[$metric][$period_name][$bin_prev_id][self::BIN_LAST_VALUE]
+                        ? ($value < $this->metric_period_bins[$metric][$period_name][$bin_prev_id][self::BIN_LAST_VALUE]
+                            ? $value
+                            : ($value - $this->metric_period_bins[$metric][$period_name][$bin_prev_id][self::BIN_LAST_VALUE]))
                         : 0;
                     $time_inc = isset($bin_prev_id)
                         ? $time - $this->metric_period_bins[$metric][$period_name][$bin_prev_id][self::BIN_LAST_TIME]
