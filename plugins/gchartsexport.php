@@ -539,8 +539,8 @@ class GChartsExport extends Export
                                 : null,
                             isset($st[Store::STAT_LAST])
                                 ? ($metric_formats[$metric_name] == 'base2'
-                                    ? Lib::shortFloat($st[Store::STAT_MAX])
-                                    : Lib::humanFloat($st[Store::STAT_MAX])
+                                    ? Lib::shortFloat($st[Store::STAT_LAST])
+                                    : Lib::humanFloat($st[Store::STAT_LAST])
                                 )
                                 : null,
                         ];
