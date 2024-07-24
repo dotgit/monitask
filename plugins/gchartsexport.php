@@ -226,14 +226,14 @@ class GChartsExport extends Export
                     PHP_EOL
                 );
                 $bk_charts[] = sprintf(
-<<<'HTML'
-<p class="lead" id="ref_%s">
-  <button class="pull-right btn btn-sm btn-link" onclick="toggleMore(this,'%s')">%s</button>
-  %s
-</p>
-<div class="panel panel-default">
-  <div class="panel-body">
-HTML,
+                    <<<'HTML'
+                    <p class="lead" id="ref_%s">
+                      <button class="pull-right btn btn-sm btn-link" onclick="toggleMore(this,'%s')">%s</button>
+                      %s
+                    </p>
+                    <div class="panel panel-default">
+                      <div class="panel-body">
+                    HTML,
                     Lib::sanitizeFilename($title),
                     $item_clean,
                     'More...',
@@ -243,7 +243,14 @@ HTML,
                     $options['title'] = "$title - $period_name";
                     $options['hAxis']['minValue'] = $this->gcDateTime($period_times[$period_name]);
                     $id = "$item_clean-$period_file";
-                    $bk_charts[] = "<div id=\"$id\"></div><div id=\"stats_$id\"></div>";
+                    $bk_charts[] =
+                        <<<HTML
+                        <div id="$id"></div>
+                        <details>
+                          <summary class="btn btn-sm btn-link">Details...</summary>
+                          <div id="stats_$id"></div>
+                        </details>
+                        HTML;
 
                     if ($period_name == $first_period) {
                         $bk_charts[] = "<div class=\"$collapse_class $item_clean\">";
@@ -266,10 +273,10 @@ HTML,
                         ) . ");";
                 }
                 $bk_charts[] =
-<<<'HTML'
-  </div></div>
-</div>
-HTML;
+                    <<<'HTML'
+                      </div></div>
+                    </div>
+                    HTML;
             }
             $toc[] = sprintf(
                 '<li><a href="#ref_%s"><b>%s</b></a></li>%s',
