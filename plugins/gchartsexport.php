@@ -557,6 +557,9 @@ class GChartsExport extends Export
                             }
                         }
                     }
+                    if (empty($lu)) {
+                        $lu = $this->gcDateTime(time());
+                    }
 
                     file_put_contents(
                         sprintf(
