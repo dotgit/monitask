@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BASEDIR=$(dirname "$0")
+BASEDIR=$(dirname "$(realpath "$0")")
 
 # set common environment
 sed -i 's/^start_time = ".*"/start_time = "'`date +%F`'"/' "$BASEDIR/ini/monitask.ini"
