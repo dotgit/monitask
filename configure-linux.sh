@@ -76,8 +76,16 @@ $METRIC_N_ERRS
 
 " "$BASEDIR/ini/network-linux.ini"
 
-# set linux environment
-sudo mkdir /var/lib/monitask
-sudo mkdir /var/www/monitask
-sudo "$BASEDIR/run-monitask.php" --datastore
-sudo sh -c "'$BASEDIR'/run-monitask.php --template > /var/www/monitask/index.html"
+# configure datastore folder
+if [ ! -d /var/lib/monitask ]
+then
+    sudo mkdir /var/lib/monitask
+    sudo "$BASEDIR/run-monitask.php" --datastore
+fi
+
+# configure web folder
+if [ ! -d /var/www/monitask ]
+then
+    sudo mkdir /var/www/monitask
+    sudo sh -c "'$BASEDIR'/run-monitask.php --template > /var/www/monitask/index.html"
+fi
