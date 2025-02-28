@@ -79,6 +79,5 @@ $METRIC_N_ERRS
 # set linux environment
 sudo mkdir /var/lib/monitask
 sudo mkdir /var/www/monitask
-chmod +x "$BASEDIR/run-monitask.php"
 sudo "$BASEDIR/run-monitask.php" --datastore
 sudo sh -c "'$BASEDIR'/run-monitask.php --template > /var/www/monitask/index.html"
